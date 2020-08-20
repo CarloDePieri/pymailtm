@@ -9,6 +9,7 @@ mailtm = {path = "."}
 [packages]
 requests = "*"
 random-username = "*"
+pyperclip = "*"
 
 [requires]
 python_version = "3.8"
