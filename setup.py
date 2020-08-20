@@ -13,4 +13,10 @@ setup(
     author='Carlo De Pieri',
     author_email='depieri.carlo@gmail.com',
     description='A python wrapper around mail.tm web api.',
+    include_package_data=True,
+    entry_points={
+        'console_scripts': [
+            'pymailtm = pymailtm:init'
+            ]
+        },
 )
