@@ -1,6 +1,6 @@
 import signal
 import sys
-from pymailtm.pymailtm import MailTm
+from pymailtm.pymailtm import MailTm, Account, Message
 
 
 def init():
