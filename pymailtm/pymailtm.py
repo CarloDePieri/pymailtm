@@ -22,7 +22,7 @@ class Account:
         self.address = address
         self.password = password
         # Set the JWT
-        jwt = MailTm._make_account_request("authentication_token",
+        jwt = MailTm._make_account_request("token",
                                            self.address, self.password)
         self.auth_headers = {
             "accept": "application/ld+json",
