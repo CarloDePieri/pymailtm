@@ -202,16 +202,14 @@ class MailTm:
         :param new: bool - force the creation of a new account"""
         def _new():
             account = self.get_account()
-            print("New account created and copied to clipboard: {}".format(
-                account.address))
+            print("New account created and copied to clipboard: {}".format(account.address), flush=True)
             return account
         if new:
             account = _new()
         else:
             try:
                 account = self._load_account()
-                print("Account recovered and copied to clipboard: {}".format(
-                    account.address))
+                print("Account recovered and copied to clipboard: {}".format(account.address), flush=True)
             except Exception:
                 account = _new()
         pyperclip.copy(account.address)

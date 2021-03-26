@@ -44,6 +44,10 @@ pyperclip = "^1.8.2"
 
 [tool.poetry.dev-dependencies]
 invoke = "^1.5.0"
+pytest = "^6.2.2"
+pytest-timeout = "^1.4.2"
+anyio = "^2.2.0"
+yagmail = "^0.14.245"
 
 [build-system]
 requires = ["poetry_core>=1.0.0"]
