@@ -105,7 +105,7 @@ class Message:
             # Wait a second before deleting the tempfile, so that the
             # browser can load it safely
             sleep(1)
-            os.remove(file_name)
+            #  os.remove(file_name)
 
 
 def open_webbrowser(link: str) -> None:
