@@ -25,7 +25,9 @@ def backup_config():
     letters = string.ascii_letters + string.digits
     seed = ''.join(random.choice(letters) for i in range(6))
     backup_file = os.path.join(os.path.expanduser("~"), f".pymailtm.{seed}.bak")
-    shutil.copy(config_file, backup_file)
+    if os.path.isfile(config_file):
+        shutil.copy(config_file, backup_file)
     yield
-    shutil.copy(backup_file, config_file)
-    os.remove(backup_file)
+    if os.path.isfile(backup_file):
+        shutil.copy(backup_file, config_file)
+        os.remove(backup_file)
