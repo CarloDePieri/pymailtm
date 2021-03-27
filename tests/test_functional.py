@@ -19,11 +19,12 @@ def send_test_email(to: str) -> None:
 
 @pytest.fixture(scope='class')
 def anyio_backend():
+    """Class scoped anyio fixture used in test class setup"""
     return 'asyncio'
 
 
 async def launch(cmd: str) -> Dict[str, str]:
-    """ Async helper function used to launch the script and test its response """
+    """ Async helper function used to launch the script and save its response """
     response = {}
 
     #  Spawn pymailtm in a async subprocess
@@ -54,14 +55,15 @@ async def launch(cmd: str) -> Dict[str, str]:
     return response
 
 #
-# This test requires a graphical environment and a browser to pass. It will fail in a pure console
-# environment, this is why it's skipped by default.
-# Also, since they use subprocesses, these cannot take advantage of vcr cassettes.
+# These tests require a graphical environment and a browser to pass. They will fail in a pure console
+# environment, this is why they're skipped by default.
+# Also, since they use subprocesses, these cannot take advantage of vcr cassettes and need to make
+# real network requests.
 #
 @pytest.mark.skip
 #
-# Since there's serious chance of deadlock, these test has a timeout. It can be tweaked if
-# too restrictive for the network.
+# Since there's serious chance of deadlock if something is wrong in the script, these tests have a 
+# timeout. It can be tweaked if too restrictive for the network.
 #
 @pytest.mark.timeout(15)
 class TestWhenUsingPymailtm:
@@ -101,18 +103,9 @@ class TestWhenUsingPymailtm:
         request.cls.stderr = response["stderr"]
         yield
 
-    @pytest.fixture(scope="class", autouse=True)
-    def teardown(self, request):
-        yield
-        self._restore_config()
-
     def _save_config(self):
         with open(self.config_path, "r") as f:
             self.data = json.load(f)
-
-    def _restore_config(self):
-        with open(self.config_path, "w") as f:
-            json.dump(self.data, f)
 
     # Actual tests
 

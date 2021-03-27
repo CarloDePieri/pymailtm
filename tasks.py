@@ -40,7 +40,34 @@ def publish_test(c):
 
 @task(build)
 def publish(c):
-    c.run(f"poetry publish")
+    c.run("poetry publish")
+
+
+@task()
+def test(c):
+    c.run("poetry run pytest", pty=True)
+
+
+@task()
+def test_spec(c):
+    c.run("poetry run pytest -p no:sugar --spec", pty=True)
+
+
+@task()
+def clear_cassettes(c):
+    c.run("rm -rf tests/cassettes")
+    print("Cleared!")
+
+
+@task()
+def test_cov(c):
+    c.run("mkdir -p coverage")
+    c.run("poetry run pytest --cov=pymailtm --cov-report annotate:coverage/cov_annotate --cov-report html:coverage/cov_html", pty=True)
+
+
+@task(test_cov)
+def html_cov(c):
+    c.run("xdg-open coverage/cov_html/index.html")
 
 
 @task

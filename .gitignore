@@ -2,3 +2,9 @@
 */__pycache__/
 dist/
 /.gmail.json
+coverage/
+/.projections.json
+/.vimspector.json
+.vim/
+/.coverage
+tests/cassettes/
