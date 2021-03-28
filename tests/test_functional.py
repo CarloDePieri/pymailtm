@@ -7,16 +7,12 @@ import signal
 import yagmail
 
 from typing import Dict
+from tests.conftest import send_test_email
 
 
-def send_test_email(to: str) -> None:
-    """ Send an email using gmail credentials specified in the .gmail.json file """
-    with open(".gmail.json", "r") as f:
-        data = json.load(f)
-    yag = yagmail.SMTP(data["mail"], data["password"])
-    yag.send(to, 'subject', 'test')
-
-
+#
+# Helpers
+#
 @pytest.fixture(scope='class')
 def anyio_backend():
     """Class scoped anyio fixture used in test class setup"""
