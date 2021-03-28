@@ -1,13 +1,17 @@
 import json
 import os
 import pytest
+import pyperclip
+import threading
+import webbrowser
+from typing import Tuple, Callable, Dict
+from time import sleep
+from unittest.mock import patch, create_autospec, mock_open
+from queue import Queue
+
 from pymailtm import MailTm, Account
 from pymailtm.pymailtm import generate_username, CouldNotGetAccountException, InvalidDbAccountException, open_webbrowser, Message
-from typing import Tuple, Callable, Dict
-from pymailtm import MailTm
-from unittest.mock import patch, create_autospec, mock_open
-import pyperclip
-import webbrowser
+from tests.conftest import send_test_email
 
 
 #
@@ -29,6 +33,10 @@ def read_config() -> Dict[str, str]:
     with open(MailTm.db_file, "r") as db:
         data = json.load(db)
     return data
+
+# Custom exception used to interrupt loops
+class TestingDoneException(Exception):
+    """Done testing!"""
 
 
 #
@@ -153,6 +161,82 @@ class TestAMailtmAccount:
         with pytest.raises(CouldNotGetAccountException):
             Account('fakeid', "fake_addr", "fake_password")
 
+    def test_should_be_able_to_delete_itself(self):
+        """... it should be able to delete itself"""
+        account = MailTm().get_account()
+        account.delete_account()
+        with pytest.raises(CouldNotGetAccountException):
+            Account(account.id_, account.address, account.password)
+
+    def test_should_return_an_empty_list_with_no_message(self):
+        """... it should return an empty list with no message"""
+        account = MailTm().get_account()
+        messages = account.get_messages()
+        assert len(messages) == 0
+
+    @pytest.mark.timeout(15)
+    def test_should_return_messages_if_present(self):
+        """... it should return messages, if present"""
+        account = MailTm().get_account()
+        send_test_email(account.address)
+        messages = []
+        while len(messages) == 0:
+            sleep(1)
+            messages = account.get_messages()
+        message = messages[0]
+        assert type(message) is Message
+        assert message.subject == "subject"
+        assert message.text == "test"
+
+    @pytest.mark.timeout(15)
+    def test_should_be_able_to_wait_for_new_messages(self, mocker):
+        """... it should be able to wait for new messages"""
+        account = MailTm().get_account()
+
+        # Function that will be launched as the monitoring thread
+        def monitor(account: Account, queue: Queue) -> None:
+            try:
+                # Mock the Message.open_web method, since there's no need to actually open the message and
+                # the monitor loop will need an exit point
+                def open_web(_) -> None:
+                    # The message arrived!
+                    # Now the monitor loop needs testing to verify that get_messages gets called again.
+                    # To do so, replace the Account.get_messages method with the stop_monitor function, that
+                    # will raise an exception and let the whole monitoring thread know that it's done.
+                    def stop_monitor(_) -> None:
+                        raise TestingDoneException()
+                    mocker.patch.object(Account, "get_messages", new=stop_monitor)
+                mocker.patch.object(Message, "open_web", new=open_web)
+
+                # Start the monitoring
+                account.monitor_account()
+            except Exception as e:
+                # Put the exception in the queue so that the main thread can continue, then exit this thread
+                queue.put(e)
+
+        # This queue will be used to lock the main thread on it and wait for the monitoring thread result
+        queue = Queue()
+        # Create a thread that will launch the monitor_account function on the account
+        monitoring_thread = threading.Thread(target=monitor, args=(account, queue))
+        # The monitoring thread must be a daemon, because if the test fails that thread must terminate
+        monitoring_thread.daemon = True
+        # Start the thread and begin monitoring the account
+        monitoring_thread.start()
+
+        # send the test mail
+        send_test_email(account.address)
+
+        # Block on the queue while waiting for the result
+        result = queue.get()
+
+        if type(result) is TestingDoneException:
+            # The TestingDoneException was raised, which means that a Message.open_web and then
+            # Account.get_messages got called. Everything went as planned!
+            assert True
+        else:
+            # Something is wrong, raise the exception
+            raise result
+
 
 @pytest.mark.vcr
 class TestWhenMailtmOpensAnAccount:
@@ -226,7 +310,6 @@ class TestTheOpenWebbrowserUtility():
 class TestAMailMessage():
     """A mail message..."""
 
-    @pytest.mark.runthis
     def test_has_a_method_to_open_itself_in_a_webbrowser(self, mocker):
         """... it has a method to open itself in a webbrowser"""
         mocked_web = mocker.patch("pymailtm.pymailtm.webbrowser.open", new=create_autospec(webbrowser.open))

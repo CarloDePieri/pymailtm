@@ -1,8 +1,10 @@
+import json
 import os
 import pytest
 import random
 import shutil
 import string
+import yagmail
 from pymailtm import MailTm
 
 #
@@ -31,3 +33,11 @@ def backup_config():
     if os.path.isfile(backup_file):
         shutil.copy(backup_file, config_file)
         os.remove(backup_file)
+
+
+def send_test_email(to: str) -> None:
+    """ Send an email using gmail credentials specified in the .gmail.json file """
+    with open(".gmail.json", "r") as f:
+        data = json.load(f)
+    yag = yagmail.SMTP(data["mail"], data["password"])
+    yag.send(to, 'subject', 'test')
