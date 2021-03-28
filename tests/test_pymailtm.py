@@ -35,7 +35,7 @@ def read_config() -> Dict[str, str]:
     return data
 
 # Custom exception used to interrupt loops
-class TestingDoneException(Exception):
+class DoneTestingException(Exception):
     """Done testing!"""
 
 
@@ -204,7 +204,7 @@ class TestAMailtmAccount:
                     # To do so, replace the Account.get_messages method with the stop_monitor function, that
                     # will raise an exception and let the whole monitoring thread know that it's done.
                     def stop_monitor(_) -> None:
-                        raise TestingDoneException()
+                        raise DoneTestingException()
                     mocker.patch.object(Account, "get_messages", new=stop_monitor)
                 mocker.patch.object(Message, "open_web", new=open_web)
 
@@ -229,8 +229,8 @@ class TestAMailtmAccount:
         # Block on the queue while waiting for the result
         result = queue.get()
 
-        if type(result) is TestingDoneException:
-            # The TestingDoneException was raised, which means that a Message.open_web and then
+        if type(result) is DoneTestingException:
+            # The DoneTestingException was raised, which means that a Message.open_web and then
             # Account.get_messages got called. Everything went as planned!
             assert True
         else:
