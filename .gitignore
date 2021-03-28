@@ -8,3 +8,4 @@ coverage/
 .vim/
 /.coverage
 tests/cassettes/
+/.coveralls.yml
