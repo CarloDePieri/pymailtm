@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pymailtm"
-version = "1.0.1"
+version = "1.0.2"
 description = "A python web api wrapper and command line client for mail.tm."
 
 license = "GPL-3.0-only"

@@ -24,31 +24,37 @@ jobs:
     name: ci
     runs-on: ubuntu-latest
     env:
+      using_act: ${{ github.actor == 'nektos/act'}}
       is_cron: ${{ github.event_name == 'schedule' }}
       GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
       GMAIL_ADDR: ${{ secrets.GMAIL_ADDR }}
+      python_version: '3.7.10'
 
     steps:
+
       - name: Checkout.
         uses: actions/checkout@v2
 
-      - name: Add deadsnakes/ppa.
-        run: sudo add-apt-repository -y ppa:deadsnakes/ppa
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ env.python_version }}
 
-      - name: Update apt repositories.
-        run: sudo apt update
+      - name: Make sure path are there also for act shells.
+        if: env.using_act == 'true'
+        run: |
+          echo "export PATH=\"/opt/hostedtoolcache/Python/${{ env.python_version }}/x64:/opt/hostedtoolcache/Python/${{ env.python_version }}/x64/bin:$PATH\"" >> /root/.bashrc
 
-      - name: Install python3.7 and pip
-        run: sudo apt install -y python3.7 python3-pip
-
-      - name: Update pip.
-        run: pip3 install --upgrade pip
+      - name: Upgrade pip.
+        run: python -m pip install --upgrade pip
 
       - name: Install poetry and invoke.
-        run: pip3 install poetry invoke
+        run: pip install poetry invoke
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
 
       - name: Install dependencies with poetry.
-        run: inv install -p python3.7
+        run: inv install
 
       - name: Launch the tests (with coverage).
         run: inv test-cov
