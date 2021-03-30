@@ -1,6 +1,8 @@
+# pymailtm
+
 [![PyPI](https://img.shields.io/pypi/v/pymailtm)](https://pypi.org/project/pymailtm/) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pymailtm)](https://pypi.org/project/pymailtm/) [![CI Status](https://img.shields.io/github/workflow/status/CarloDePieri/pymailtm/prod?logo=github)](https://github.com/CarloDePieri/pymailtm/actions/workflows/prod.yml) [![Coverage Status](https://coveralls.io/repos/github/CarloDePieri/pymailtm/badge.svg?branch=master)](https://coveralls.io/github/CarloDePieri/pymailtm?branch=master) [![Maintenance](https://img.shields.io/maintenance/yes/2021)](https://github.com/CarloDePieri/pymailtm/)
 
-This is a command line interface and python web-api wrapper for [mail.tm](https://mail.tm).
+Pymailtm is a command line interface and python web-api wrapper for [mail.tm](https://mail.tm).
 
 The api is documented [here](https://api.mail.tm/).
 
