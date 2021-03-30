@@ -1,0 +1,7 @@
+#!/bin/bash
+#
+# Source this script after login into an act container to have access to the python env:
+#
+# $ source act-shell-fix-path
+
+export PATH="/opt/hostedtoolcache/Python/3.7.10/x64:/opt/hostedtoolcache/Python/3.7.10/x64/bin:$PATH"
