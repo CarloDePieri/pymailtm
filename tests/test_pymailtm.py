@@ -126,11 +126,13 @@ class TestAMailtmClass:
 
         _open_account_spy = mocker.spy(mt, "_open_account")
         mocked_open = mocker.patch("pymailtm.pymailtm.webbrowser.open", new=create_autospec(webbrowser.open))
+        mocked_copy = mocker.patch("pymailtm.pymailtm.pyperclip.copy", new=create_autospec(pyperclip.copy))
 
         mt.browser_login()
 
         _open_account_spy.assert_called()
         mocked_open.assert_called_once_with("https://mail.tm/")
+        mocked_copy.assert_called_once()
 
     def test_should_be_able_to_monitor_an_account(self, mocker):
         """... it should be able to monitor an account"""
