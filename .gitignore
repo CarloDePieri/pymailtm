@@ -9,3 +9,4 @@ coverage/
 /.coverage
 tests/cassettes/
 /.coveralls.yml
+/.secrets

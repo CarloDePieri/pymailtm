@@ -52,11 +52,11 @@ async def launch(cmd: str) -> Dict[str, str]:
 
 #
 # These tests require a graphical environment and a browser to pass. They will fail in a pure console
-# environment, this is why they're skipped by default.
+# environment.
 # Also, since they use subprocesses, these cannot take advantage of vcr cassettes and need to make
 # real network requests.
 #
-@pytest.mark.skip
+@pytest.mark.graphical
 #
 # Since there's serious chance of deadlock if something is wrong in the script, these tests have a 
 # timeout. It can be tweaked if too restrictive for the network.

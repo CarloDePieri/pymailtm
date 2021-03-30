@@ -44,6 +44,8 @@ def mocked_monitor(mocker):
 class TestTheMailtmScript:
     """The MailTm script..."""
 
+    # This requires an actual graphical environment
+    @pytest.mark.graphical
     @pytest.mark.anyio
     async def test_should_close_gracefully_with_ctrl_c(self):
         """... it should close gracefully with ctrl c"""

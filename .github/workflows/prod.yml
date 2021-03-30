@@ -1,0 +1,54 @@
+---
+name: prod
+
+on:
+  push:
+    branches:
+      - "master"
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: "Log level"
+        required: true
+        default: "warning"
+  schedule:
+    - cron: "0 0 1 */1 *"
+    # - cron: "*/5 * * * *" # 5 min testing
+
+jobs:
+  ci:
+    name: ci
+    runs-on: ubuntu-latest
+    env:
+      is_cron: ${{ github.event_name == 'schedule' }}
+      GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
+      GMAIL_ADDR: ${{ secrets.GMAIL_ADDR }}
+
+    steps:
+      - name: Checkout.
+        uses: actions/checkout@v2
+
+      - name: Add deadsnakes/ppa.
+        run: add-apt-repository -y ppa:deadsnakes/ppa && apt update
+
+      - name: Install python3.7 and pip
+        run: apt install -y python3.7 python3-pip
+
+      - name: Update pip.
+        run: pip3 install --upgrade pip
+
+      - name: Install poetry and invoke.
+        run: pip3 install poetry invoke
+
+      - name: Install dependencies with poetry.
+        run: inv install -p python3.7
+
+      - name: Launch the tests (with coverage).
+        run: inv test-cov
+
+      - name: Preapare the coveralls config.
+        run: |
+          echo "repo_token: ${{ secrets.COVERALLS_TOKEN }}" > .coveralls.yml
+
+      - name: Upload coverage stats
+        run: inv publish-coverage

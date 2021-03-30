@@ -34,6 +34,11 @@ def build(c):
 
 
 @task(build)
+def publish_coverage(c):
+    c.run(f"poetry run coveralls")
+
+
+@task(build)
 def publish_test(c):
     c.run(f"poetry publish -r {poetry_pypi_testing}")
 
@@ -44,13 +49,22 @@ def publish(c):
 
 
 @task()
-def test(c):
-    c.run("poetry run pytest", pty=True)
+def test(c, full=False, s=False):
+    marks = ""
+    capture = ""
+    if not full:
+        marks = " -m 'not graphical'"
+    if s:
+        capture = " -s"
+    c.run(f"poetry run pytest{capture}{marks}", pty=True)
 
 
 @task()
-def test_spec(c):
-    c.run("poetry run pytest -p no:sugar --spec", pty=True)
+def test_spec(c, full=False):
+    marks = ""
+    if not full:
+        marks = " -m 'not graphical'"
+    c.run(f"poetry run pytest -p no:sugar --spec{marks}", pty=True)
 
 
 @task()
@@ -60,9 +74,12 @@ def clear_cassettes(c):
 
 
 @task()
-def test_cov(c):
+def test_cov(c, full=False):
     c.run("mkdir -p coverage")
-    c.run("poetry run pytest --cov=pymailtm --cov-report annotate:coverage/cov_annotate --cov-report html:coverage/cov_html", pty=True)
+    marks = ""
+    if not full:
+        marks = " -m 'not graphical'"
+    c.run(f"poetry run pytest --cov=pymailtm --cov-report annotate:coverage/cov_annotate --cov-report html:coverage/cov_html{marks}", pty=True)
 
 
 @task(test_cov)
@@ -78,3 +95,17 @@ def run(c, n=False, l=False):
         c.run("poetry run pymailtm -n", pty=True)
     else:
         c.run("poetry run pymailtm", pty=True)
+
+#
+# ACT
+#
+act_prod_ctx = "act-prod-ci"
+
+@task
+def act_prod(c, cmd=""):
+    if cmd == "":
+        c.run("act -r -W .github/workflows/prod.yml", pty=True)
+    elif cmd == "shell":
+        c.run(f"docker exec -it {act_prod_ctx} env TERM=xterm bash", pty=True)
+    elif cmd == "clean":
+        c.run(f"docker rm -f {act_prod_ctx}", pty=True)
