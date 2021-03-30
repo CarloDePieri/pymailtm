@@ -1,0 +1,59 @@
+[tool.poetry]
+name = "pymailtm"
+version = "1.0.2"
+description = "A python web api wrapper and command line client for mail.tm."
+
+license = "GPL-3.0-only"
+
+authors = [
+  "Carlo De Pieri <depieri.carlo@gmail.com>"
+]
+
+readme = 'README.md'
+
+repository = "https://github.com/CarloDePieri/pymailtm"
+homepage = "https://github.com/CarloDePieri/pymailtm"
+
+packages = [
+  { include = "pymailtm" }
+]
+
+keywords = ["mail", "temp", "mail.tm"]
+
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: Console",
+  "Environment :: Web Environment",
+  "Intended Audience :: Developers",
+  "Intended Audience :: End Users/Desktop",
+  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+  "Programming Language :: Python :: 3",
+  "Topic :: Communications :: Email",
+  "Topic :: Communications :: Email :: Email Clients (MUA)",
+  "Topic :: Utilities"
+]
+
+[tool.poetry.scripts]
+pymailtm = 'pymailtm.cli:init'
+
+[tool.poetry.dependencies]
+python = "^3.7"
+requests = "^2.25.1"
+random-username = "^1.0.2"
+pyperclip = "^1.8.2"
+
+[tool.poetry.dev-dependencies]
+anyio = "^2.2.0"
+yagmail = "^0.14.245"
+pytest = "^6.2.2"
+pytest-cov = "^2.11.1"
+pytest-mock = "^3.5.1"
+pytest-sugar = "^0.9.4"
+pytest-spec = "^3.1.0"
+pytest-timeout = "^1.4.2"
+coveralls = "^3.0.1"
+PyYAML = "^5.4.1"
+
+[build-system]
+requires = ["poetry_core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

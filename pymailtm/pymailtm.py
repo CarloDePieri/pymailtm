@@ -105,7 +105,7 @@ class Message:
             # Wait a second before deleting the tempfile, so that the
             # browser can load it safely
             sleep(1)
-            os.remove(file_name)
+            #  os.remove(file_name)
 
 
 def open_webbrowser(link: str) -> None:
@@ -202,16 +202,14 @@ class MailTm:
         :param new: bool - force the creation of a new account"""
         def _new():
             account = self.get_account()
-            print("New account created and copied to clipboard: {}".format(
-                account.address))
+            print("New account created and copied to clipboard: {}".format(account.address), flush=True)
             return account
         if new:
             account = _new()
         else:
             try:
                 account = self._load_account()
-                print("Account recovered and copied to clipboard: {}".format(
-                    account.address))
+                print("Account recovered and copied to clipboard: {}".format(account.address), flush=True)
             except Exception:
                 account = _new()
         pyperclip.copy(account.address)
