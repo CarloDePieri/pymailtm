@@ -10,7 +10,7 @@ default_python_bin = "python3.7"
 @task
 def install(c, python=default_python_bin):
     if python == "latest":
-        # don't do anithing here: poetry will use the default python version
+        # don't do anything here: poetry will use the default python version
         pass
     else:
         c.run("poetry env use {}".format(python))
@@ -99,7 +99,9 @@ def run(c, n=False, l=False):
 #
 # ACT
 #
+act_dev_ctx = "act-dev-ci"
 act_prod_ctx = "act-prod-ci"
+
 
 @task
 def act_prod(c, cmd=""):
@@ -109,3 +111,13 @@ def act_prod(c, cmd=""):
         c.run(f"docker exec -it {act_prod_ctx} env TERM=xterm bash", pty=True)
     elif cmd == "clean":
         c.run(f"docker rm -f {act_prod_ctx}", pty=True)
+
+
+@task
+def act_dev(c, cmd=""):
+    if cmd == "":
+        c.run("act -r -W .github/workflows/dev.yml", pty=True)
+    elif cmd == "shell":
+        c.run(f"docker exec -it {act_dev_ctx} env TERM=xterm bash", pty=True)
+    elif cmd == "clean":
+        c.run(f"docker rm -f {act_dev_ctx}", pty=True)

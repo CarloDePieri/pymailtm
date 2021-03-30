@@ -1,11 +1,15 @@
 ---
-name: prod
+name: dev
 
 on:
 
-  push:
+  pull_request:
     branches:
       - "master"
+
+  push:
+    branches:
+      - "testing"
 
   workflow_dispatch:
     inputs:
@@ -13,10 +17,6 @@ on:
         description: "Log level"
         required: true
         default: "warning"
-
-  schedule:
-    - cron: "0 0 1 */1 *"
-    # - cron: "*/5 * * * *" # 5 min testing
 
 jobs:
 
