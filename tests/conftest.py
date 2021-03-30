@@ -37,7 +37,14 @@ def backup_config():
 
 def send_test_email(to: str) -> None:
     """ Send an email using gmail credentials specified in the .gmail.json file """
-    with open(".gmail.json", "r") as f:
-        data = json.load(f)
-    yag = yagmail.SMTP(data["mail"], data["password"])
+    if os.path.isfile(".gmail.json"):
+        with open(".gmail.json", "r") as f:
+            data = json.load(f)
+            mail = data["mail"]
+            password = data["password"]
+    else:
+        print('env')
+        mail = os.environ['GMAIL_ADDR']
+        password = os.environ['GMAIL_PASS']
+    yag = yagmail.SMTP(mail, password)
     yag.send(to, 'subject', 'test')
