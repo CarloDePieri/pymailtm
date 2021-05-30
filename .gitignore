@@ -10,3 +10,4 @@ coverage/
 tests/cassettes/
 /.coveralls.yml
 /.secrets
+.vscode
