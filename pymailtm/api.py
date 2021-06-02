@@ -7,8 +7,6 @@ from random_username.generate import generate_username
 from dataclasses import dataclass
 from typing import Dict, List, Union
 
-from requests.models import Response
-
 
 api_address = "https://api.mail.tm"
 
@@ -53,8 +51,9 @@ class DomainManager:
 
     @staticmethod
     def getDomain(id: str) -> Domain:
-        """TODO"""
+        """Get data for the domain corresponding to the given id."""
         r = requests.get(f"{api_address}/domains/{id}")
+        r.raise_for_status()
         response = r.json()
         return DomainManager._domain_from_dict(response)
 
@@ -90,7 +89,7 @@ class AccountManager:
         }
         r = requests.post("{}/{}".format(api_address, "accounts"),
                           data=json.dumps(account), headers=headers)
-
+        r.raise_for_status()
         data = r.json()
         data["password"] = password
         return AccountManager._account_from_dict(data)

@@ -4,6 +4,7 @@ import re
 from typing import List
 
 from random_username.generate import generate_username
+from requests.models import HTTPError
 from pymailtm.api import Account, AccountManager, Domain, DomainManager, DomainNotAvailableException
 
 
@@ -49,6 +50,11 @@ class TestADomainManager:
         domain = self.domains[0]
         domain_data = DomainManager.getDomain(domain.id)
         assert domain.domain == domain_data.domain
+
+    def test_should_raise_an_exception_when_no_domain_with_the_specified_id_is_found(self):
+        """It should raise an exception when no domain with the specified id is found"""
+        with pytest.raises(HTTPError):
+            DomainManager.getDomain("0")
 
 
 class TestAnAccount:
@@ -137,3 +143,10 @@ class TestAnAccountManager:
         assert isinstance(account, Account)
         assert account.address == f"{user}@{domain}"
         assert account.password == password
+
+    def test_should_pass_along_exception_when_creating_users(self):
+        """It should pass along exception when creating users"""
+        user = generate_username(1)[0].lower()
+        AccountManager.new(user=user)
+        with pytest.raises(HTTPError):
+            AccountManager.new(user=user)
