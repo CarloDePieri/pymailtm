@@ -156,3 +156,15 @@ class TestAnAccountManager:
         AccountManager.new(user=user)
         with pytest.raises(HTTPError):
             AccountManager.new(user=user)
+
+    def test_should_be_able_to_get_a_jwt(self):
+        """It should be able to get a JWT"""
+        account = AccountManager.new()
+        jwt = AccountManager.get_jwt(account.address, account.password)
+        assert type(jwt) is str
+        assert len(jwt) > 0
+
+    def test_should_raise_an_exception_when_getting_a_jwt_with_wrong_credentials(self):
+        """It should raise an exception when getting a JWT with wrong credentials"""
+        with pytest.raises(HTTPError):
+            AccountManager.get_jwt("nothere@nothere.not", "nope")

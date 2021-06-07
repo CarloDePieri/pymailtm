@@ -83,19 +83,13 @@ class AccountManager:
             password = AccountManager._generate_password(6)
 
         account = {"address": address, "password": password}
-        headers = {
-            "accept": "application/ld+json",
-            "Content-Type": "application/json"
-        }
-        r = requests.post("{}/{}".format(api_address, "accounts"),
-                          data=json.dumps(account), headers=headers)
-        r.raise_for_status()
-        data = r.json()
+        data = AccountManager._make_post_request("accounts", account)
         data["password"] = password
         return AccountManager._account_from_dict(data)
 
     @staticmethod
     def _account_from_dict(data: Dict) -> Account:
+        """Create an Account object starting from a dict."""
         return Account(
             id=data["id"],
             address=data["address"],
@@ -122,6 +116,25 @@ class AccountManager:
         if user is None:
             user = generate_username(1)[0].lower()
         return f"{user}@{domain}"
+
+    @staticmethod
+    def get_jwt(address: str, password: str) -> str:
+        """Get the JWT associated with the provided address and password."""
+        account = {"address": address, "password": password}
+        data = AccountManager._make_post_request("token", account)
+        return data["token"]
+
+    @staticmethod
+    def _make_post_request(endpoint: str, data: Dict) -> Dict:
+        """Make a post request to the given endpoint and with the given data."""
+        headers = {
+            "accept": "application/ld+json",
+            "Content-Type": "application/json"
+        }
+        r = requests.post("{}/{}".format(api_address, endpoint),
+                          data=json.dumps(data), headers=headers)
+        r.raise_for_status()
+        return r.json()
 
     @staticmethod
     def _generate_password(length):
