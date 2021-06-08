@@ -100,16 +100,22 @@ class AccountManager:
     def login(address: str, password: str) -> Account:
         """Return an Account object after authorizing it with the web api."""
         jwt = AccountManager.get_jwt(address, password)
+        data = AccountManager.get_account_data(jwt)
+        data["password"] = password
+        return AccountManager._account_from_dict(data, jwt)
+
+    @staticmethod
+    def get_account_data(jwt: str, account_id: Union[str, None] = None) -> Dict:
+        """Return account data, using a valid JWT. By default target the account that generated the JWT."""
         auth_headers = {
             "accept": "application/ld+json",
             "Content-Type": "application/json",
             "Authorization": f"Bearer {jwt}"
         }
-        r = requests.get(f"{api_address}/me", headers=auth_headers)
+        target = "me" if account_id is None else f"accounts/{account_id}"
+        r = requests.get(f"{api_address}/{target}", headers=auth_headers)
         r.raise_for_status()
-        data = r.json()
-        data["password"] = password
-        return AccountManager._account_from_dict(data, jwt)
+        return r.json()
 
     @staticmethod
     def _account_from_dict(data: Dict, jwt: Union[str, None] = None) -> Account:

@@ -201,3 +201,12 @@ class TestAnAccountManager:
         with pytest.raises(HTTPError) as err:
             AccountManager.login(account.address, "wrong_pass")
         assert '401 Client Error: Unauthorized' in err.value.args[0]
+
+    def test_can_return_an_account_from_the_id_and_a_jwt(self):
+        """It can return an account from the id and a jwt"""
+        account = AccountManager.new()
+        jwt = AccountManager.get_jwt(account.address, account.password)
+        account_data = AccountManager.get_account_data(jwt)
+        assert account.id == account_data["id"]
+        account_data = AccountManager.get_account_data(jwt, account.id)
+        assert account.id == account_data["id"]
