@@ -103,6 +103,23 @@ class TestAnAccount:
         account.login()
         assert account.is_logged_in()
 
+    def test_should_be_possible_to_delete_it(self):
+        """It should be possible to delete it"""
+        account = AccountManager.new()
+        account.login()
+        account.delete()
+        with pytest.raises(HTTPError) as err:
+            AccountManager.login(account.address, account.password)
+        # This is a 401 because the login method tries to get a JWT without success
+        assert "401 Client Error: Unauthorized" in err.value.args[0]
+
+    def test_should_raise_an_exception_when_trying_to_delete_an_account_without_login(self):
+        """It should raise an exception when trying to delete an account without login"""
+        account = AccountManager.new()
+        with pytest.raises(HTTPError) as err:
+            account.delete()
+        assert "401 Client Error: Unauthorized" in err.value.args[0]
+
 
 @pytest.mark.vcr
 class TestAnAccountManager:

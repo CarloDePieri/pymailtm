@@ -44,6 +44,17 @@ class Account:
         """Return true if a JWT is available."""
         return type(self.jwt) is str and len(self.jwt) > 0
 
+    def delete(self) -> bool:
+        """Delete the Account on the API."""
+        auth_headers = {
+            "accept": "application/ld+json",
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.jwt}"
+        }
+        r = requests.delete(f"{api_address}/accounts/{self.id}", headers=auth_headers)
+        r.raise_for_status()
+        self.isDeleted = True
+
 
 class DomainManager:
     """Class responsible to get active domains data from the mail.tm web api."""
