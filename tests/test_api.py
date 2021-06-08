@@ -42,7 +42,7 @@ class TestADomainManager:
 
     @pytest.fixture(scope="class", autouse=True)
     def setup(self, request):
-        request.cls.domains = DomainManager.getActiveDomains()
+        request.cls.domains = DomainManager.get_active_domains()
 
     def test_should_be_able_to_return_active_domains(self):
         """It should be able to return active domains"""
@@ -52,15 +52,16 @@ class TestADomainManager:
     def test_should_be_able_to_get_an_existing_domain_data(self):
         """It should be able to get an existing domain data"""
         domain = self.domains[0]
-        domain_data = DomainManager.getDomain(domain.id)
+        domain_data = DomainManager.get_domain(domain.id)
         assert domain.domain == domain_data.domain
 
     def test_should_raise_an_exception_when_no_domain_with_the_specified_id_is_found(self):
         """It should raise an exception when no domain with the specified id is found"""
         with pytest.raises(HTTPError):
-            DomainManager.getDomain("0")
+            DomainManager.get_domain("0")
 
 
+@pytest.mark.vcr
 class TestAnAccount:
     """Test: An Account..."""
 
@@ -88,6 +89,20 @@ class TestAnAccount:
         assert test_account.updatedAt == updatedAt
         assert test_account.password == password
 
+    def test_can_login_after_being_created(self):
+        """It can login after being created"""
+        account = AccountManager.new()
+        account.login()
+        assert type(account.jwt) is str
+        assert len(account.jwt) > 0
+
+    def test_should_have_a_method_to_verify_the_login(self):
+        """It should have a method to verify the login"""
+        account = AccountManager.new()
+        assert not account.is_logged_in()
+        account.login()
+        assert account.is_logged_in()
+
 
 @pytest.mark.vcr
 class TestAnAccountManager:
@@ -101,7 +116,7 @@ class TestAnAccountManager:
 
     def test_should_be_able_to_generate_a_valid_address_with_the_provided_arguments(self):
         """It should be able to generate a valid address with the provided arguments"""
-        valid_domain = DomainManager.getActiveDomains()[0]
+        valid_domain = DomainManager.get_active_domains()[0]
         address = AccountManager.generate_address(user="nick", domain=valid_domain.domain)
         assert address == f"nick@{valid_domain.domain}"
 
@@ -143,7 +158,7 @@ class TestAnAccountManager:
     def test_should_be_able_to_create_an_account_with_the_specified_arguments(self):
         """It should be able to create an account with the specified arguments"""
         user = generate_username(1)[0].lower()
-        domain = DomainManager.getActiveDomains()[0].domain
+        domain = DomainManager.get_active_domains()[0].domain
         password = "secure"
         account = AccountManager.new(user=user, domain=domain, password=password)
         assert isinstance(account, Account)
@@ -168,3 +183,21 @@ class TestAnAccountManager:
         """It should raise an exception when getting a JWT with wrong credentials"""
         with pytest.raises(HTTPError):
             AccountManager.get_jwt("nothere@nothere.not", "nope")
+
+    def test_should_be_able_to_login(self):
+        """It should be able to login"""
+        account = AccountManager.new()
+        logged_account = AccountManager.login(account.address, account.password)
+        assert isinstance(logged_account, Account)
+        assert logged_account.address == account.address
+        assert logged_account.password == account.password
+        assert logged_account.createdAt == account.createdAt
+        assert logged_account.jwt is not None
+        assert len(logged_account.jwt) > 0
+
+    def test_should_raise_an_exception_when_loggin_in_with_the_wrong_credentials(self):
+        """It should raise an exception when loggin in with the wrong credentials"""
+        account = AccountManager.new()
+        with pytest.raises(HTTPError) as err:
+            AccountManager.login(account.address, "wrong_pass")
+        assert '401 Client Error: Unauthorized' in err.value.args[0]

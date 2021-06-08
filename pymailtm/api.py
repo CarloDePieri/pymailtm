@@ -34,23 +34,32 @@ class Account:
     createdAt: str
     updatedAt: str
     password: str
+    jwt: Union[str, None] = None
+
+    def login(self) -> None:
+        """Recover a JWT from the api using saved credentials."""
+        self.jwt = AccountManager.get_jwt(self.address, self.password)
+
+    def is_logged_in(self) -> bool:
+        """Return true if a JWT is available."""
+        return type(self.jwt) is str and len(self.jwt) > 0
 
 
 class DomainManager:
     """Class responsible to get active domains data from the mail.tm web api."""
 
     @staticmethod
-    def getActiveDomains() -> List[Domain]:
+    def get_active_domains() -> List[Domain]:
         """Get from the mail.tm api a list of currently active domains."""
         domains = []
-        r = requests.get("{}/domains".format(api_address))
+        r = requests.get(f"{api_address}/domains")
         response = r.json()
         for domain_data in response["hydra:member"]:
             domains.append(DomainManager._domain_from_dict(domain_data))
         return domains
 
     @staticmethod
-    def getDomain(id: str) -> Domain:
+    def get_domain(id: str) -> Domain:
         """Get data for the domain corresponding to the given id."""
         r = requests.get(f"{api_address}/domains/{id}")
         r.raise_for_status()
@@ -71,7 +80,7 @@ class DomainManager:
 
 
 class AccountManager:
-    """TODO"""
+    """Class used to create new Account resources and to get logged in Account objects."""
 
     @staticmethod
     def new(user: Union[str, None] = None,
@@ -88,7 +97,22 @@ class AccountManager:
         return AccountManager._account_from_dict(data)
 
     @staticmethod
-    def _account_from_dict(data: Dict) -> Account:
+    def login(address: str, password: str) -> Account:
+        """Return an Account object after authorizing it with the web api."""
+        jwt = AccountManager.get_jwt(address, password)
+        auth_headers = {
+            "accept": "application/ld+json",
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {jwt}"
+        }
+        r = requests.get(f"{api_address}/me", headers=auth_headers)
+        r.raise_for_status()
+        data = r.json()
+        data["password"] = password
+        return AccountManager._account_from_dict(data, jwt)
+
+    @staticmethod
+    def _account_from_dict(data: Dict, jwt: Union[str, None] = None) -> Account:
         """Create an Account object starting from a dict."""
         return Account(
             id=data["id"],
@@ -99,7 +123,8 @@ class AccountManager:
             isDeleted=data["isDeleted"],
             createdAt=data["createdAt"],
             updatedAt=data["updatedAt"],
-            password=data["password"]
+            password=data["password"],
+            jwt=jwt
         )
 
     @staticmethod
@@ -107,7 +132,7 @@ class AccountManager:
         """Generate an address. 
 
         Will raise DomainNotAvailableException when trying to use an unavailable domain."""
-        valid_domains = DomainManager.getActiveDomains()
+        valid_domains = DomainManager.get_active_domains()
         if domain is None:
             domain = valid_domains[0].domain
         else:
@@ -131,7 +156,7 @@ class AccountManager:
             "accept": "application/ld+json",
             "Content-Type": "application/json"
         }
-        r = requests.post("{}/{}".format(api_address, endpoint),
+        r = requests.post(f"{api_address}/{endpoint}",
                           data=json.dumps(data), headers=headers)
         r.raise_for_status()
         return r.json()
