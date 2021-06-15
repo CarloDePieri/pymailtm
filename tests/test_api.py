@@ -141,6 +141,26 @@ class TestAnAccount:
         assert messages[0].subject == 'subject'
         assert len(account.messages) == 1
 
+    @pytest.mark.timeout(15)
+    def test_should_maintain_a_full_message_cache(self):
+        """It should maintain a full message cache"""
+        account = AccountManager.new()
+        account.login()
+        send_test_email(account.address)
+        messages = []
+        while len(messages) == 0:
+            sleep(1)
+            messages = account.get_all_messages_intro()
+        # Download full message
+        assert not account.messages[0].is_full_message
+        for message in account.messages:
+            message.get_full_message()
+        assert account.messages[0].is_full_message
+        # Recover messages intro again
+        account.get_all_messages_intro()
+        # Check that the full message is still there
+        assert account.messages[0].is_full_message
+
     def test_will_raise_an_exception_when_trying_to_download_messages_without_having_logged_in(self):
         """It will raise an exception when trying to download messages without having logged in"""
         account = AccountManager.new()

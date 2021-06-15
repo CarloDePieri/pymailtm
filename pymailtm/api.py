@@ -70,8 +70,12 @@ class Account:
             # ... then keep checking the next page until one returns no message
             page += 1
             page_messages = self._download_messages_page(page)
-        self.messages = messages
-        return messages
+        for message in messages:
+            # only add new messages, so to preserve already download full one
+            check = list(filter(lambda x: x.id == message.id, self.messages))
+            if len(check) == 0:
+                self.messages.append(message)
+        return self.messages
 
     def _download_messages_page(self, page: int) -> List[Message]:
         """Download a page of message intro resources from the web api."""
@@ -90,7 +94,7 @@ class Account:
 
 @dataclass
 class Message:
-    """A message resource on the web api."""
+    """A message resource from the mail.tm web api."""
     account: Account
     id: str
     accountId: str
