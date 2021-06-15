@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import json
 import random
 import requests
 import string
 
 from random_username.generate import generate_username
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Union
 
 
@@ -34,6 +36,7 @@ class Account:
     createdAt: str
     updatedAt: str
     password: str
+    messages: List[Message] = field(default_factory=list)
     jwt: Union[str, None] = None
 
     def login(self) -> None:
@@ -54,6 +57,151 @@ class Account:
         r = requests.delete(f"{api_address}/accounts/{self.id}", headers=auth_headers)
         r.raise_for_status()
         self.isDeleted = True
+
+    def get_all_messages_intro(self) -> List[Message]:
+        """Download all the account's messages intro from the web api."""
+        page = 1
+        messages = []
+        # Download the first page of messages intro
+        page_messages = self._download_messages_page(page)
+        while len(page_messages) > 0:
+            # Add the page messages to the full list...
+            messages += page_messages
+            # ... then keep checking the next page until one returns no message
+            page += 1
+            page_messages = self._download_messages_page(page)
+        self.messages = messages
+        return messages
+
+    def _download_messages_page(self, page: int) -> List[Message]:
+        """Download a page of message intro resources from the web api."""
+        messages = []
+        auth_headers = {
+            "accept": "application/ld+json",
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.jwt}"
+        }
+        r = requests.get(f"{api_address}/messages?page={page}", headers=auth_headers)
+        r.raise_for_status()
+        for message_data in r.json()["hydra:member"]:
+            messages.append(Message._from_intro_dict(message_data, self))
+        return messages
+
+
+@dataclass
+class Message:
+    """A message resource on the web api."""
+    account: Account
+    id: str
+    accountId: str
+    msgid: str
+    message_from: Dict
+    message_to: Dict
+    subject: str
+    seen: bool
+    isDeleted: bool
+    hasAttachments: bool
+    size: int
+    downloadUrl: str
+    createdAt: str
+    updatedAt: str
+
+    is_full_message: bool = False
+
+    # Fields specific of an intro message
+    intro: Union[str, None] = None
+
+    # Fields specific of a full message
+    cc: Union[List[Dict[str, str]], None] = None
+    bcc: Union[List[Dict[str, str]], None] = None
+    flagged: Union[bool, None] = None
+    verifications: Union[List, None] = None
+    retention: Union[bool, None] = None
+    retentionDate: Union[str, None] = None
+    text: Union[str, None] = None
+    html: Union[List[str], None] = None
+    attachments: Union[List[Dict], None] = None
+
+    def __post_init__(self):
+        """Method called right after a dataclass __init__"""
+        # Set the intro field if coming directly from the full message data
+        if self.is_full_message and self.intro is None:
+            text = self.text.replace("\n", " ")[:120]
+            if len(self.text) > 120:
+                text += "…"
+            self.intro = text
+
+    def get_full_message(self):
+        """Download the full message from the web api."""
+        auth_headers = {
+            "accept": "application/ld+json",
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.account.jwt}"
+        }
+        r = requests.get(f"{api_address}/messages/{self.id}", headers=auth_headers)
+        r.raise_for_status()
+        data = r.json()
+        self.is_full_message = True
+        self.cc = data["cc"]
+        self.bcc = data["bcc"]
+        self.flagged = data["flagged"]
+        self.verifications = data["verifications"]
+        self.retention = data["retention"]
+        self.retentionDate = data["retentionDate"]
+        self.text = data["text"]
+        self.html = data["html"]
+        self.attachments = data["attachments"]
+
+    @staticmethod
+    def _from_intro_dict(data: Dict, account: Account) -> Message:
+        """Build a Message object from the dict extracted from the web api response for /messages."""
+        return Message(
+            account=account,
+            id=data["id"],
+            accountId=data["accountId"],
+            msgid=data["msgid"],
+            message_from=data["from"],
+            message_to=data["to"],
+            subject=data["subject"],
+            seen=data["seen"],
+            isDeleted=data["isDeleted"],
+            hasAttachments=data["hasAttachments"],
+            size=data["size"],
+            downloadUrl=data["downloadUrl"],
+            createdAt=data["createdAt"],
+            updatedAt=data["updatedAt"],
+            intro=data["intro"]
+        )
+
+    @staticmethod
+    def _from_full_dict(data: Dict, account: Account) -> Message:
+        """Build a Message object from the dict extracted from the web api response for /messages/{id}."""
+        return Message(
+            account=account,
+            id=data["id"],
+            accountId=data["accountId"],
+            msgid=data["msgid"],
+            message_from=data["from"],
+            message_to=data["to"],
+            subject=data["subject"],
+            seen=data["seen"],
+            isDeleted=data["isDeleted"],
+            hasAttachments=data["hasAttachments"],
+            size=data["size"],
+            downloadUrl=data["downloadUrl"],
+            createdAt=data["createdAt"],
+            updatedAt=data["updatedAt"],
+            is_full_message=True,
+            cc=data["cc"],
+            bcc=data["bcc"],
+            flagged=data["flagged"],
+            verifications=data["verifications"],
+            retention=data["retention"],
+            retentionDate=data["retentionDate"],
+            text=data["text"],
+            html=data["html"],
+            attachments=data["attachments"]
+        )
 
 
 class DomainManager:
@@ -146,7 +294,7 @@ class AccountManager:
 
     @staticmethod
     def generate_address(user: Union[str, None] = None, domain: Union[str, None] = None) -> str:
-        """Generate an address. 
+        """Generate an address.
 
         Will raise DomainNotAvailableException when trying to use an unavailable domain."""
         valid_domains = DomainManager.get_active_domains()
