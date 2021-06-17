@@ -1,4 +1,6 @@
 from __future__ import annotations
+from enum import Enum
+from functools import partial
 
 import json
 import random
@@ -7,7 +9,7 @@ import string
 
 from random_username.generate import generate_username
 from dataclasses import dataclass, field
-from typing import Dict, List, Union
+from typing import Any, Dict, List, Union
 
 
 api_address = "https://api.mail.tm"
@@ -30,7 +32,7 @@ class Account:
     id: str
     address: str
     quota: int
-    used: 0
+    used: int
     isDisabled: bool
     isDeleted: bool
     createdAt: str
@@ -49,14 +51,11 @@ class Account:
 
     def delete(self) -> bool:
         """Delete the Account on the API."""
-        auth_headers = {
-            "accept": "application/ld+json",
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.jwt}"
-        }
-        r = requests.delete(f"{api_address}/accounts/{self.id}", headers=auth_headers)
-        r.raise_for_status()
+        make_api_request(HTTPVerb.DELETE,
+                         f"accounts/{self.id}",
+                         self.jwt)
         self.isDeleted = True
+        return self.isDeleted
 
     def get_all_messages_intro(self) -> List[Message]:
         """Download all the account's messages intro from the web api."""
@@ -80,14 +79,10 @@ class Account:
     def _download_messages_page(self, page: int) -> List[Message]:
         """Download a page of message intro resources from the web api."""
         messages = []
-        auth_headers = {
-            "accept": "application/ld+json",
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.jwt}"
-        }
-        r = requests.get(f"{api_address}/messages?page={page}", headers=auth_headers)
-        r.raise_for_status()
-        for message_data in r.json()["hydra:member"]:
+        data = make_api_request(HTTPVerb.GET,
+                                f"messages?page={page}",
+                                self.jwt)
+        for message_data in data["hydra:member"]:
             messages.append(Message._from_intro_dict(message_data, self))
         return messages
 
@@ -129,7 +124,7 @@ class Message:
     def __post_init__(self):
         """Method called right after a dataclass __init__"""
         # Set the intro field if coming directly from the full message data
-        if self.is_full_message and self.intro is None:
+        if self.is_full_message and self.intro is None and self.text is not None:
             text = self.text.replace("\n", " ")[:120]
             if len(self.text) > 120:
                 text += "…"
@@ -137,14 +132,9 @@ class Message:
 
     def get_full_message(self):
         """Download the full message from the web api."""
-        auth_headers = {
-            "accept": "application/ld+json",
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.account.jwt}"
-        }
-        r = requests.get(f"{api_address}/messages/{self.id}", headers=auth_headers)
-        r.raise_for_status()
-        data = r.json()
+        data = make_api_request(HTTPVerb.GET,
+                                f"messages/{self.id}",
+                                self.account.jwt)
         self.is_full_message = True
         self.cc = data["cc"]
         self.bcc = data["bcc"]
@@ -215,19 +205,16 @@ class DomainManager:
     def get_active_domains() -> List[Domain]:
         """Get from the mail.tm api a list of currently active domains."""
         domains = []
-        r = requests.get(f"{api_address}/domains")
-        response = r.json()
-        for domain_data in response["hydra:member"]:
+        data = make_api_request(HTTPVerb.GET, "domains")
+        for domain_data in data["hydra:member"]:
             domains.append(DomainManager._domain_from_dict(domain_data))
         return domains
 
     @staticmethod
     def get_domain(id: str) -> Domain:
         """Get data for the domain corresponding to the given id."""
-        r = requests.get(f"{api_address}/domains/{id}")
-        r.raise_for_status()
-        response = r.json()
-        return DomainManager._domain_from_dict(response)
+        data = make_api_request(HTTPVerb.GET, f"domains/{id}")
+        return DomainManager._domain_from_dict(data)
 
     @staticmethod
     def _domain_from_dict(domain_data: Dict) -> Domain:
@@ -255,7 +242,7 @@ class AccountManager:
             password = AccountManager._generate_password(6)
 
         account = {"address": address, "password": password}
-        data = AccountManager._make_post_request("accounts", account)
+        data = make_api_request(HTTPVerb.POST, "accounts", data=account)
         data["password"] = password
         return AccountManager._account_from_dict(data)
 
@@ -270,18 +257,11 @@ class AccountManager:
     @staticmethod
     def get_account_data(jwt: str, account_id: Union[str, None] = None) -> Dict:
         """Return account data, using a valid JWT. By default target the account that generated the JWT."""
-        auth_headers = {
-            "accept": "application/ld+json",
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {jwt}"
-        }
-        target = "me" if account_id is None else f"accounts/{account_id}"
-        r = requests.get(f"{api_address}/{target}", headers=auth_headers)
-        r.raise_for_status()
-        return r.json()
+        endpoint = "me" if account_id is None else f"accounts/{account_id}"
+        return make_api_request(HTTPVerb.GET, endpoint, jwt=jwt)
 
     @staticmethod
-    def _account_from_dict(data: Dict, jwt: Union[str, None] = None) -> Account:
+    def _account_from_dict(data: Dict[str, Any], jwt: Union[str, None] = None) -> Account:
         """Create an Account object starting from a dict."""
         return Account(
             id=data["id"],
@@ -315,23 +295,11 @@ class AccountManager:
     def get_jwt(address: str, password: str) -> str:
         """Get the JWT associated with the provided address and password."""
         account = {"address": address, "password": password}
-        data = AccountManager._make_post_request("token", account)
+        data = make_api_request(HTTPVerb.POST, "token", data=account)
         return data["token"]
 
     @staticmethod
-    def _make_post_request(endpoint: str, data: Dict) -> Dict:
-        """Make a post request to the given endpoint and with the given data."""
-        headers = {
-            "accept": "application/ld+json",
-            "Content-Type": "application/json"
-        }
-        r = requests.post(f"{api_address}/{endpoint}",
-                          data=json.dumps(data), headers=headers)
-        r.raise_for_status()
-        return r.json()
-
-    @staticmethod
-    def _generate_password(length):
+    def _generate_password(length: int):
         """Generate a random alphanumeric password of the given length."""
         letters = string.ascii_letters + string.digits
         return ''.join(random.choice(letters) for _ in range(length))
@@ -339,3 +307,40 @@ class AccountManager:
 
 class DomainNotAvailableException(Exception):
     """Exception raised when trying to use an unavailable domain in an address."""
+
+
+# Helpers
+class HTTPVerb(Enum):
+    """TODO"""
+    GET = partial(requests.get)
+    POST = partial(requests.post)
+    DELETE = partial(requests.delete)
+    PATCH = partial(requests.patch)
+
+
+def make_api_request(requests_verb: HTTPVerb,
+                     endpoint: str,
+                     jwt: Union[str, None] = None,
+                     data: Union[Dict[str, Any], None] = None) -> Dict[str, Any]:
+    """TODO"""
+    url = f"{api_address}/{endpoint}"
+    auth_headers = {
+        "accept": "application/ld+json",
+        "Content-Type": "application/json"
+    }
+
+    if jwt:
+        auth_headers["Authorization"] = f"Bearer {jwt}"
+
+    if requests_verb == HTTPVerb.POST:
+        response = requests_verb.value(url, headers=auth_headers, data=json.dumps(data))
+    else:
+        response = requests_verb.value(url, headers=auth_headers)
+
+    response.raise_for_status()
+
+    if len(response.content) > 0:
+        return response.json()
+    else:
+        # this is the case only for delete
+        return {}
