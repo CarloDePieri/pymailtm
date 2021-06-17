@@ -1,16 +1,29 @@
-from time import sleep
-from tests.conftest import send_test_email
-import pytest
 import re
+from time import sleep
+from typing import Any, Dict, List
 
-from typing import List
-
+import pytest
+from pymailtm.api import (Account, AccountManager, Domain, DomainManager,
+                          DomainNotAvailableException, Message)
 from random_username.generate import generate_username
 from requests.models import HTTPError
-from pymailtm.api import Account, AccountManager, Domain, DomainManager, DomainNotAvailableException, Message
 
-from tests.conftest import send_test_email, vcr_skip
+from tests.conftest import send_test_email, vcr_record, vcr_skip, vcr_delete_on_failure, timeout_five, timeout_three
 
+
+#
+# Helpers
+#
+def ensure_at_least_a_message(account: Account) -> None:
+    """TODO"""
+    starting_messages_length = len(account.get_all_messages_intro())
+    if starting_messages_length == 0:
+        send_test_email(account.address)
+        while len(account.get_all_messages_intro()) == 0:
+            # Wait for the mail to arrive
+            sleep(1)
+        # When failing for the test timeout and combined with vcr the actual messages number could be higher than 1
+        assert len(account.messages) > 0
 
 
 class TestADomain:
@@ -35,7 +48,8 @@ class TestADomain:
         assert test_domain.updatedAt == updatedAt
 
 
-@pytest.mark.vcr
+@vcr_record
+@vcr_delete_on_failure
 class TestADomainManager:
     """Test: A DomainManager..."""
 
@@ -62,7 +76,9 @@ class TestADomainManager:
             DomainManager.get_domain("0")
 
 
-@pytest.mark.vcr
+@vcr_record
+@vcr_delete_on_failure
+@timeout_three
 class TestAnAccount:
     """Test: An Account..."""
 
@@ -121,35 +137,25 @@ class TestAnAccount:
             account.delete()
         assert "401 Client Error: Unauthorized" in err.value.args[0]
 
-    @pytest.mark.timeout(15)
     def test_should_be_able_to_download_its_messages_intro(self):
         """It should be able to download its messages intro."""
         account = AccountManager.new()
         account.login()
-        assert len(account.messages) == 0
 
-        send_test_email(account.address)
+        # This helper function calls account.get_all_messages_intro()
+        ensure_at_least_a_message(account)
 
-        messages = []
-        while len(messages) == 0:
-            sleep(1)
-            messages = account.get_all_messages_intro()
+        assert isinstance(account.messages[0], Message)
+        assert account.messages[0].subject == 'subject'
 
-        assert len(messages) == 1
-        assert isinstance(messages[0], Message)
-        assert messages[0].subject == 'subject'
-        assert len(account.messages) == 1
-
-    @pytest.mark.timeout(15)
+    @timeout_five
     def test_should_maintain_a_full_message_cache(self):
         """It should maintain a full message cache"""
         account = AccountManager.new()
         account.login()
-        send_test_email(account.address)
-        messages = []
-        while len(messages) == 0:
-            sleep(1)
-            messages = account.get_all_messages_intro()
+
+        ensure_at_least_a_message(account)
+
         # Download full message
         assert not account.messages[0].is_full_message
         for message in account.messages:
@@ -168,7 +174,9 @@ class TestAnAccount:
         assert "401 Client Error: Unauthorized" in err.value.args[0]
 
 
-@pytest.mark.vcr
+@vcr_record
+@vcr_delete_on_failure
+@timeout_three
 class TestAnAccountManager:
     """Test: An AccountManager..."""
 
@@ -276,12 +284,18 @@ class TestAnAccountManager:
         assert account.id == account_data["id"]
 
 
-@pytest.mark.vcr
+@vcr_record
+@vcr_delete_on_failure
+@timeout_three
 class TestAMessage:
     """Test: A Message..."""
 
+    data: Dict[str, Any]
+    data_full: Dict[str, Any]
+    account: Account
+
     @pytest.fixture(scope="class", autouse=True)
-    def setup(self, request):
+    def setup(self, request, vcr_setup, vcr_delete_setup_cassette_on_failure):
         request.cls.account = AccountManager.new()
         request.cls.account.login()
         request.cls.data = {
@@ -453,19 +467,14 @@ class TestAMessage:
         assert message.text == self.data_full["text"]
         assert message.is_full_message
 
-    @pytest.mark.timeout(30)
+    @timeout_five
     def test_should_have_a_method_to_download_the_full_message_data(self):
         """It should have a method to download the full message data"""
         account = self.account
 
-        send_test_email(account.address)
+        ensure_at_least_a_message(account)
 
-        messages = []
-        while len(messages) == 0:
-            sleep(1)
-            messages = account.get_all_messages_intro()
-
-        message = messages[0]
+        message = account.messages[0]
         message.get_full_message()
         assert message.is_full_message
         assert message.text is not None

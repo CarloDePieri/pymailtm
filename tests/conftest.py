@@ -8,7 +8,7 @@ from typing import Type
 
 import pytest
 import yagmail
-from _pytest.nodes import Item
+from _pytest.python import Function
 from pymailtm import MailTm
 
 default_cassettes_path = "tests/cassettes"
@@ -16,7 +16,8 @@ default_cassettes_path = "tests/cassettes"
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtest_makereport(item, call):
-    """Hook used to make available to fixtures tests results."""
+    """Hook used to make available to fixtures tests results.
+    To function this presume no stand-alone test: only tests inside classes are supported."""
     outcome = yield
     rep = outcome.get_result()
     # set a report attribute for each phase of a call, which can
@@ -29,22 +30,27 @@ def pytest_runtest_makereport(item, call):
         item.cls._setup_reports = _setup_reports
 
 
-def _delete_test_cassette(node: Item):
-    """Delete a test cassette."""
+def _mark_cassette_for_deletion(cassette: str, test_class):
+    """Insert in a class scoped dictionary the marked cassette. It will be deleted by delete_marked_cassettes."""
+    _marked_cassettes = getattr(test_class, '_marked_cassettes', [])
+    _marked_cassettes.append(cassette)
+    test_class._marked_cassettes = _marked_cassettes
+
+
+def _mark_test_cassette_for_deletion(node: Function):
+    """Mark a test cassette for deletion."""
     test = node.location[2]
     path = node.location[0].replace("tests/", "tests/cassettes/").replace(".py", "")
     cassette = f"{path}/{test}.yaml"
-    if os.path.exists(cassette):
-        os.remove(cassette)
+    _mark_cassette_for_deletion(cassette, node.cls)
 
 
-def _delete_class_setup_cassette(test_class: Type):
-    """Delete a class setup cassette."""
+def _mark_class_setup_cassette_for_deletion(test_class: Type):
+    """Mark a class setup cassette for deletion."""
     path = f"{default_cassettes_path}/{test_class.__module__}"
     name = f"{test_class.__name__}_setup"
     cassette = f"{path}/{name}.yaml"
-    if os.path.exists(cassette):
-        os.remove(cassette)
+    _mark_cassette_for_deletion(cassette, test_class)
 
 
 def _has_class_setup_failed(test_class: Type) -> bool:
@@ -66,7 +72,7 @@ def vcr_delete_test_cassette_on_failure(request):
     if request.node.rep_setup.failed or request.node.rep_call.failed:
         # This particular 'setup' reports consists of function scoped fixtures used by the test
         # For the class scoped setup, use vcr_delete_setup_cassette_on_failure fixture in the setup
-        _delete_test_cassette(request.node)
+        _mark_test_cassette_for_deletion(request.node)
 
 
 @pytest.fixture(scope="class")
@@ -75,7 +81,7 @@ def vcr_delete_setup_cassette_on_failure(request):
     It must be called as a fixture dependency in the class setup fixture (no usefixtures mark)."""
     yield
     if _has_class_setup_failed(request.cls):
-        _delete_class_setup_cassette(request.cls)
+        _mark_class_setup_cassette_for_deletion(request.cls)
 
 
 @pytest.fixture(scope="class")
@@ -91,10 +97,30 @@ def vcr_setup(request):
         yield
 
 
+@pytest.fixture(scope="class", autouse=True)
+def delete_marked_cassettes(request):
+    """Delete all marked cassettes in the class teardown.
+    This is done here because there's a race condition between vcr cassette saving and test teardown, so deleting
+    them there is not safe; class teardown, on the other hand, is."""
+    yield
+    marked_cassettes = getattr(request.cls, '_marked_cassettes', [])
+    for cassette in marked_cassettes:
+        if os.path.exists(cassette):
+            os.remove(cassette)
+
+
 # Decorator used as a shortcut for vcr_delete_test_cassette_on_failure fixture
 vcr_delete_on_failure = pytest.mark.usefixtures("vcr_delete_test_cassette_on_failure")
 # Decorator used to make a test skip VCR recording entirely
-vcr_skip = pytest.mark.vcr(before_record_request=lambda x: None)
+vcr_skip = pytest.mark.vcr(before_record_request=lambda _: None)
+# Decorator used for consistency
+vcr_record = pytest.mark.vcr
+
+# Decorator timeouts: using signal I'm sure that the teardown will be performed
+timeout_three = pytest.mark.timeout(3, method='signal')
+timeout_five = pytest.mark.timeout(5, method='signal')
+timeout_ten = pytest.mark.timeout(10, method='signal')
+timeout_fifteen = pytest.mark.timeout(15, method='signal')
 
 
 #
