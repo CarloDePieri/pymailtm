@@ -9,9 +9,8 @@ from random_username.generate import generate_username
 from requests.models import HTTPError
 from pymailtm.api import Account, AccountManager, Domain, DomainManager, DomainNotAvailableException, Message
 
+from tests.conftest import send_test_email, vcr_skip
 
-# Decorator used to make a test skip VCR recording entirely
-skip_vcr = pytest.mark.vcr(before_record_request=lambda x: None)
 
 
 class TestADomain:
@@ -219,7 +218,7 @@ class TestAnAccountManager:
         assert len(account.address) > 0
         assert len(account.password) == 6
 
-    @skip_vcr
+    @vcr_skip
     def test_should_be_able_to_create_an_account_with_the_specified_arguments(self):
         """It should be able to create an account with the specified arguments"""
         user = generate_username(1)[0].lower()
