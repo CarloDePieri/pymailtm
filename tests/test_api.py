@@ -15,7 +15,8 @@ from tests.conftest import send_test_email, vcr_record, vcr_skip, vcr_delete_on_
 # Helpers
 #
 def ensure_at_least_a_message(account: Account) -> None:
-    """TODO"""
+    """Check if at least a message is present in the account. If none are found, send a mail and wait for it to arrive
+    before returning."""
     starting_messages_length = len(account.get_all_messages_intro())
     if starting_messages_length == 0:
         send_test_email(account.address)

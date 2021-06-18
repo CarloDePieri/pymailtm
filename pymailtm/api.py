@@ -311,7 +311,7 @@ class DomainNotAvailableException(Exception):
 
 # Helpers
 class HTTPVerb(Enum):
-    """TODO"""
+    """Convenient way to express pass an argument to make_api_request."""
     GET = partial(requests.get)
     POST = partial(requests.post)
     DELETE = partial(requests.delete)
@@ -322,7 +322,10 @@ def make_api_request(requests_verb: HTTPVerb,
                      endpoint: str,
                      jwt: Union[str, None] = None,
                      data: Union[Dict[str, Any], None] = None) -> Dict[str, Any]:
-    """TODO"""
+    """Send an HTTP request to the webapi endpoint, using the chosen verb.
+    If jwt is provided, the request will be authenticated.
+    When doing POST request, an optional data argument can be passed to this function.
+    It will return the server response."""
     url = f"{api_address}/{endpoint}"
     auth_headers = {
         "accept": "application/ld+json",
@@ -332,7 +335,7 @@ def make_api_request(requests_verb: HTTPVerb,
     if jwt:
         auth_headers["Authorization"] = f"Bearer {jwt}"
 
-    if requests_verb == HTTPVerb.POST:
+    if requests_verb == HTTPVerb.POST and data is not None:
         response = requests_verb.value(url, headers=auth_headers, data=json.dumps(data))
     else:
         response = requests_verb.value(url, headers=auth_headers)
