@@ -1,0 +1,108 @@
+@api_addr = https://api.mail.tm
+
+### get domains
+
+# @name getDomains
+GET {{api_addr}}/domains
+
+### get domain by id
+
+@domain = {{getDomains.response.body.$.hydra:member.0.domain}}
+@domain_id = {{getDomains.response.body.$.hydra:member.0.id}}
+
+GET {{api_addr}}/domains/{{domain_id}}
+
+### Create Account
+
+@name = test123
+@address = {{name}}@{{domain}}
+@password = notsecure
+
+POST {{api_addr}}/accounts
+accept: application/ld+json
+Content-Type: application/json
+
+{
+	"address": "{{address}}",
+	"password": "{{password}}"
+}
+
+### get JWT
+
+# @name getToken
+POST {{api_addr}}/token
+accept: application/ld+json
+Content-Type: application/json
+
+{
+	"address": "{{address}}",
+	"password": "{{password}}"
+}
+
+### get me account
+
+ @jwt = {{getToken.response.body.$.token}}
+
+# @name getMe
+GET {{api_addr}}/me
+accept: application/ld+json
+Content-Type: application/json
+Authorization: Bearer {{jwt}}
+
+### get account by id
+
+@account_id = {{getMe.response.body.$.id}}
+
+GET {{api_addr}}/accounts/{{account_id}}
+accept: application/ld+json
+Content-Type: application/json
+Authorization: Bearer {{jwt}}
+
+### delete account
+
+DELETE {{api_addr}}/accounts/{{account_id}}
+accept: application/ld+json
+Content-Type: application/json
+Authorization: Bearer {{jwt}}
+
+### get messages
+
+# @name getMessages
+GET {{api_addr}}/messages?page=1
+accept: application/ld+json
+Content-Type: application/json
+Authorization: Bearer {{jwt}}
+
+### get last message
+
+@last_message_id = {{getMessages.response.body.$.hydra:member.0.id}}
+
+GET {{api_addr}}/messages/{{last_message_id}}
+accept: application/ld+json
+Content-Type: application/json
+Authorization: Bearer {{jwt}}
+
+### mark last message as seen
+
+PATCH {{api_addr}}/messages/{{last_message_id}}
+accept: application/ld+json
+Content-Type: application/ld+json
+Authorization: Bearer {{jwt}}
+
+{
+  "seen": true
+}
+
+### get last message source
+
+GET {{api_addr}}/sources/{{last_message_id}}
+accept: application/ld+json
+Content-Type: application/json
+Authorization: Bearer {{jwt}}
+
+### delete last message
+
+DELETE {{api_addr}}/messages/{{last_message_id}}
+accept: application/ld+json
+Content-Type: application/json
+Authorization: Bearer {{jwt}}

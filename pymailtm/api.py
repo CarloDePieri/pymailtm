@@ -25,6 +25,18 @@ class Domain:
     createdAt: str
     updatedAt: str
 
+    @staticmethod
+    def _from_dict(domain_data: Dict) -> Domain:
+        """Return a new Domain object starting from a dict of data."""
+        return Domain(
+            domain_data["id"],
+            domain_data["domain"],
+            domain_data["isActive"],
+            domain_data["isPrivate"],
+            domain_data["createdAt"],
+            domain_data["updatedAt"]
+        )
+
 
 @dataclass
 class Account:
@@ -85,6 +97,23 @@ class Account:
         for message_data in data["hydra:member"]:
             messages.append(Message._from_intro_dict(message_data, self))
         return messages
+
+    @staticmethod
+    def _from_dict(data: Dict[str, Any], jwt: Union[str, None] = None) -> Account:
+        """Create an Account object starting from a dict. If given a valid jwt the object
+        will represent an already logged in account."""
+        return Account(
+            id=data["id"],
+            address=data["address"],
+            quota=data["quota"],
+            used=data["used"],
+            isDisabled=data["isDisabled"],
+            isDeleted=data["isDeleted"],
+            createdAt=data["createdAt"],
+            updatedAt=data["updatedAt"],
+            password=data["password"],
+            jwt=jwt
+        )
 
 
 @dataclass
@@ -207,26 +236,14 @@ class DomainManager:
         domains = []
         data = make_api_request(HTTPVerb.GET, "domains")
         for domain_data in data["hydra:member"]:
-            domains.append(DomainManager._domain_from_dict(domain_data))
+            domains.append(Domain._from_dict(domain_data))
         return domains
 
     @staticmethod
     def get_domain(id: str) -> Domain:
         """Get data for the domain corresponding to the given id."""
         data = make_api_request(HTTPVerb.GET, f"domains/{id}")
-        return DomainManager._domain_from_dict(data)
-
-    @staticmethod
-    def _domain_from_dict(domain_data: Dict) -> Domain:
-        """Return a new Domain object starting from a dict of data."""
-        return Domain(
-            domain_data["id"],
-            domain_data["domain"],
-            domain_data["isActive"],
-            domain_data["isPrivate"],
-            domain_data["createdAt"],
-            domain_data["updatedAt"]
-        )
+        return Domain._from_dict(data)
 
 
 class AccountManager:
@@ -237,14 +254,14 @@ class AccountManager:
             domain: Union[str, None] = None,
             password: Union[str, None] = None) -> Account:
         """Create an account on mail.tm."""
-        address = AccountManager.generate_address(user, domain)
+        address = AccountManager._generate_address(user, domain)
         if password is None:
-            password = AccountManager._generate_password(6)
+            password = AccountManager._generate_random_password(6)
 
         account = {"address": address, "password": password}
         data = make_api_request(HTTPVerb.POST, "accounts", data=account)
         data["password"] = password
-        return AccountManager._account_from_dict(data)
+        return Account._from_dict(data)
 
     @staticmethod
     def login(address: str, password: str) -> Account:
@@ -252,7 +269,7 @@ class AccountManager:
         jwt = AccountManager.get_jwt(address, password)
         data = AccountManager.get_account_data(jwt)
         data["password"] = password
-        return AccountManager._account_from_dict(data, jwt)
+        return Account._from_dict(data, jwt)
 
     @staticmethod
     def get_account_data(jwt: str, account_id: Union[str, None] = None) -> Dict:
@@ -261,23 +278,14 @@ class AccountManager:
         return make_api_request(HTTPVerb.GET, endpoint, jwt=jwt)
 
     @staticmethod
-    def _account_from_dict(data: Dict[str, Any], jwt: Union[str, None] = None) -> Account:
-        """Create an Account object starting from a dict."""
-        return Account(
-            id=data["id"],
-            address=data["address"],
-            quota=data["quota"],
-            used=data["used"],
-            isDisabled=data["isDisabled"],
-            isDeleted=data["isDeleted"],
-            createdAt=data["createdAt"],
-            updatedAt=data["updatedAt"],
-            password=data["password"],
-            jwt=jwt
-        )
+    def get_jwt(address: str, password: str) -> str:
+        """Get the JWT associated with the provided address and password."""
+        account = {"address": address, "password": password}
+        data = make_api_request(HTTPVerb.POST, "token", data=account)
+        return data["token"]
 
     @staticmethod
-    def generate_address(user: Union[str, None] = None, domain: Union[str, None] = None) -> str:
+    def _generate_address(user: Union[str, None] = None, domain: Union[str, None] = None) -> str:
         """Generate an address.
 
         Will raise DomainNotAvailableException when trying to use an unavailable domain."""
@@ -292,14 +300,7 @@ class AccountManager:
         return f"{user}@{domain}"
 
     @staticmethod
-    def get_jwt(address: str, password: str) -> str:
-        """Get the JWT associated with the provided address and password."""
-        account = {"address": address, "password": password}
-        data = make_api_request(HTTPVerb.POST, "token", data=account)
-        return data["token"]
-
-    @staticmethod
-    def _generate_password(length: int):
+    def _generate_random_password(length: int):
         """Generate a random alphanumeric password of the given length."""
         letters = string.ascii_letters + string.digits
         return ''.join(random.choice(letters) for _ in range(length))

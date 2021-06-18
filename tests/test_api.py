@@ -174,36 +174,6 @@ class TestAnAccount:
             account.get_all_messages_intro()
         assert "401 Client Error: Unauthorized" in err.value.args[0]
 
-
-@vcr_record
-@vcr_delete_on_failure
-@timeout_three
-class TestAnAccountManager:
-    """Test: An AccountManager..."""
-
-    def test_should_be_able_to_generate_a_valid_address_with_no_arguments(self):
-        """It should be able to generate a valid address with no arguments"""
-        address = AccountManager.generate_address()
-        reg = r"[^@]+@[^@]+\.[^@]+"
-        assert re.fullmatch(reg, address) is not None
-
-    def test_should_be_able_to_generate_a_valid_address_with_the_provided_arguments(self):
-        """It should be able to generate a valid address with the provided arguments"""
-        valid_domain = DomainManager.get_active_domains()[0]
-        address = AccountManager.generate_address(user="nick", domain=valid_domain.domain)
-        assert address == f"nick@{valid_domain.domain}"
-
-    def test_should_raise_an_error_with_an_invalid_domain(self):
-        """It should raise an error with an invalid domain"""
-        with pytest.raises(DomainNotAvailableException):
-            AccountManager.generate_address(user="nick", domain="invalid.nope")
-
-    def test_should_be_able_to_generate_a_random_password(self):
-        """It should be able to generate a random password"""
-        password = AccountManager._generate_password(6)
-        assert len(password) == 6
-        assert type(password) is str
-
     def test_should_be_able_to_create_an_account_from_a_dict(self):
         """It should be able to create an Account from a dict"""
         data = {"id": "000011",
@@ -216,9 +186,39 @@ class TestAnAccountManager:
                 "updatedAt": "2021-05-22T00:00:00+00:00",
                 "password": "secure"
                 }
-        account = AccountManager._account_from_dict(data)
+        account = Account._from_dict(data)
         assert isinstance(account, Account)
         assert account.id == data["id"]
+
+
+@vcr_record
+@vcr_delete_on_failure
+@timeout_three
+class TestAnAccountManager:
+    """Test: An AccountManager..."""
+
+    def test_should_be_able_to_generate_a_valid_address_with_no_arguments(self):
+        """It should be able to generate a valid address with no arguments"""
+        address = AccountManager._generate_address()
+        reg = r"[^@]+@[^@]+\.[^@]+"
+        assert re.fullmatch(reg, address) is not None
+
+    def test_should_be_able_to_generate_a_valid_address_with_the_provided_arguments(self):
+        """It should be able to generate a valid address with the provided arguments"""
+        valid_domain = DomainManager.get_active_domains()[0]
+        address = AccountManager._generate_address(user="nick", domain=valid_domain.domain)
+        assert address == f"nick@{valid_domain.domain}"
+
+    def test_should_raise_an_error_with_an_invalid_domain(self):
+        """It should raise an error with an invalid domain"""
+        with pytest.raises(DomainNotAvailableException):
+            AccountManager._generate_address(user="nick", domain="invalid.nope")
+
+    def test_should_be_able_to_generate_a_random_password(self):
+        """It should be able to generate a random password"""
+        password = AccountManager._generate_random_password(6)
+        assert len(password) == 6
+        assert type(password) is str
 
     def test_should_be_able_to_create_an_account_with_no_arguments(self):
         """It should be able to create an account with no arguments"""
@@ -275,8 +275,8 @@ class TestAnAccountManager:
             AccountManager.login(account.address, "wrong_pass")
         assert '401 Client Error: Unauthorized' in err.value.args[0]
 
-    def test_can_return_an_account_from_the_id_and_a_jwt(self):
-        """It can return an account from the id and a jwt"""
+    def test_can_return_account_data_from_the_id_and_a_jwt(self):
+        """It can return account data from the id and a jwt"""
         account = AccountManager.new()
         jwt = AccountManager.get_jwt(account.address, account.password)
         account_data = AccountManager.get_account_data(jwt)
