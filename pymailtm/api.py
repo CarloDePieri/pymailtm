@@ -88,6 +88,16 @@ class Account:
                 self.messages.append(message)
         return self.messages
 
+    def refresh(self) -> None:
+        """Download account data and update fields that could have changed."""
+        # Type checkers would complain at the following line about the self.jwt type (which
+        # could be None) without 'type: ignore'. That case is handled by the request exception 401,
+        # so no need to handle it here.
+        data = AccountManager.get_account_data(self.jwt, self.id)  # type: ignore
+        self.used = data["used"]
+        self.isDisabled = data["isDisabled"]
+        self.updatedAt = data["updatedAt"]
+
     def _download_messages_page(self, page: int) -> List[Message]:
         """Download a page of message intro resources from the web api."""
         messages = []
@@ -159,7 +169,7 @@ class Message:
                 text += "…"
             self.intro = text
 
-    def get_full_message(self):
+    def get_full_message(self) -> None:
         """Download the full message from the web api."""
         data = make_api_request(HTTPVerb.GET,
                                 f"messages/{self.id}",
@@ -175,17 +185,19 @@ class Message:
         self.html = data["html"]
         self.attachments = data["attachments"]
 
-    def delete(self):
+    def delete(self) -> bool:
         """Delete the message."""
-        self.isDeleted = True
-        self.account.messages = [message for message in self.account.messages if message.id != self.id]
         make_api_request(HTTPVerb.DELETE, f"messages/{self.id}", self.account.jwt)
+        self.account.messages = [message for message in self.account.messages if message.id != self.id]
+        self.isDeleted = True
+        return self.isDeleted
 
-    def mark_as_seen(self):
+    def mark_as_seen(self) -> bool:
         """Mark the message as seen."""
-        self.seen = True
         make_api_request(HTTPVerb.PATCH, f"messages/{self.id}", self.account.jwt,
                          data={"seen": True}, content="application/ld+json")
+        self.seen = True
+        return self.seen
 
     def get_source(self) -> str:
         """Download the message source."""
@@ -317,7 +329,7 @@ class AccountManager:
         return f"{user}@{domain}"
 
     @staticmethod
-    def _generate_random_password(length: int):
+    def _generate_random_password(length: int) -> str:
         """Generate a random alphanumeric password of the given length."""
         letters = string.ascii_letters + string.digits
         return ''.join(random.choice(letters) for _ in range(length))

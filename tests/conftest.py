@@ -121,6 +121,7 @@ timeout_three = pytest.mark.timeout(3, method='signal')
 timeout_five = pytest.mark.timeout(5, method='signal')
 timeout_ten = pytest.mark.timeout(10, method='signal')
 timeout_fifteen = pytest.mark.timeout(15, method='signal')
+timeout_none = pytest.mark.timeout(-1, method='signal')
 
 
 #

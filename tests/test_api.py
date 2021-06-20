@@ -8,7 +8,9 @@ from pymailtm.api import (Account, AccountManager, Domain, DomainManager,
 from random_username.generate import generate_username
 from requests.models import HTTPError
 
-from tests.conftest import send_test_email, vcr_record, vcr_skip, vcr_delete_on_failure, timeout_five, timeout_three
+# Ignoring type checkers errors here, since timeout_none is used only when developing
+from tests.conftest import (send_test_email, vcr_record, vcr_skip, vcr_delete_on_failure,
+                            timeout_five, timeout_three, timeout_none)  # type: ignore
 
 
 #
@@ -27,6 +29,7 @@ def ensure_at_least_a_message(account: Account) -> None:
         assert len(account.messages) > 0
 
 
+@timeout_none
 class TestADomain:
     """Test: A Domain..."""
 
@@ -189,6 +192,16 @@ class TestAnAccount:
         account = Account._from_dict(data)
         assert isinstance(account, Account)
         assert account.id == data["id"]
+
+    def test_can_be_manually_refreshed(self):
+        """It can be manually refreshed"""
+        account = AccountManager.new()
+        account.login()
+        before = account.used
+        ensure_at_least_a_message(account)
+        assert before == account.used
+        account.refresh()
+        assert before != account.used
 
 
 @vcr_record
@@ -484,7 +497,8 @@ class TestAMessage:
         ensure_at_least_a_message(account)
         message = account.messages[0]
         messages_before = len(account.messages)
-        message.delete()
+        deleted = message.delete()
+        assert deleted
         assert message.isDeleted
         # Ensure that the message has been deleted locally
         assert len(account.messages) == messages_before - 1
@@ -498,7 +512,8 @@ class TestAMessage:
         account = self.account
         ensure_at_least_a_message(account)
         message = account.messages[0]
-        message.mark_as_seen()
+        seen = message.mark_as_seen()
+        assert seen
         assert message.seen
         # To make sure the message has been marked on the server clear the list and redownload it
         account.messages = []
