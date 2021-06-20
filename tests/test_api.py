@@ -505,3 +505,12 @@ class TestAMessage:
         account.get_all_messages_intro()
         seen_message = list(filter(lambda m: m.id == message.id, account.messages))[0]
         assert seen_message.seen
+
+    def test_should_be_possible_to_download_the_source(self):
+        """It should be possible to download the source"""
+        account = self.account
+        ensure_at_least_a_message(account)
+        message = account.messages[0]
+        source = message.get_source()
+        assert len(source) > 0
+        assert source.find("Delivered-To:") == 0

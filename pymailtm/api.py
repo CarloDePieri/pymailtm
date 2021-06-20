@@ -187,6 +187,11 @@ class Message:
         make_api_request(HTTPVerb.PATCH, f"messages/{self.id}", self.account.jwt,
                          data={"seen": True}, content="application/ld+json")
 
+    def get_source(self) -> str:
+        """Download the message source."""
+        response = make_api_request(HTTPVerb.GET, f"sources/{self.id}", self.account.jwt)
+        return response["data"]
+
     @staticmethod
     def _from_intro_dict(data: Dict, account: Account) -> Message:
         """Build a Message object from the dict extracted from the web api response for /messages."""
