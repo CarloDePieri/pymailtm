@@ -175,6 +175,12 @@ class Message:
         self.html = data["html"]
         self.attachments = data["attachments"]
 
+    def delete(self):
+        """Delete the message."""
+        self.isDeleted = True
+        self.account.messages = [message for message in self.account.messages if message.id != self.id]
+        make_api_request(HTTPVerb.DELETE, f"messages/{self.id}", self.account.jwt)
+
     @staticmethod
     def _from_intro_dict(data: Dict, account: Account) -> Message:
         """Build a Message object from the dict extracted from the web api response for /messages."""

@@ -472,10 +472,22 @@ class TestAMessage:
     def test_should_have_a_method_to_download_the_full_message_data(self):
         """It should have a method to download the full message data"""
         account = self.account
-
         ensure_at_least_a_message(account)
-
         message = account.messages[0]
         message.get_full_message()
         assert message.is_full_message
         assert message.text is not None
+
+    def test_should_be_possible_to_delete_a_message(self):
+        """It should be possible to delete a message"""
+        account = self.account
+        ensure_at_least_a_message(account)
+        message = account.messages[0]
+        messages_before = len(account.messages)
+        message.delete()
+        assert message.isDeleted
+        # Ensure that the message has been deleted locally
+        assert len(account.messages) == messages_before - 1
+        # Ensure the message has been deleted on the server as well
+        account.get_all_messages_intro()
+        assert len(account.messages) == messages_before - 1
