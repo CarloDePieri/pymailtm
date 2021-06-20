@@ -491,3 +491,17 @@ class TestAMessage:
         # Ensure the message has been deleted on the server as well
         account.get_all_messages_intro()
         assert len(account.messages) == messages_before - 1
+
+    @timeout_five
+    def test_should_be_markable_as_seen(self):
+        """It should be markable as seen"""
+        account = self.account
+        ensure_at_least_a_message(account)
+        message = account.messages[0]
+        message.mark_as_seen()
+        assert message.seen
+        # To make sure the message has been marked on the server clear the list and redownload it
+        account.messages = []
+        account.get_all_messages_intro()
+        seen_message = list(filter(lambda m: m.id == message.id, account.messages))[0]
+        assert seen_message.seen
