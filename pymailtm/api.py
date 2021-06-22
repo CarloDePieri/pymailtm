@@ -53,9 +53,10 @@ class Account:
     messages: List[Message] = field(default_factory=list)
     jwt: Union[str, None] = None
 
-    def login(self) -> None:
+    def get_jwt(self) -> str:
         """Recover a JWT from the api using saved credentials."""
         self.jwt = AccountManager.get_jwt(self.address, self.password)
+        return self.jwt
 
     def is_logged_in(self) -> bool:
         """Return true if a JWT is available."""
@@ -281,7 +282,8 @@ class AccountManager:
     @staticmethod
     def new(user: Union[str, None] = None,
             domain: Union[str, None] = None,
-            password: Union[str, None] = None) -> Account:
+            password: Union[str, None] = None,
+            auto_login: bool = True) -> Account:
         """Create an account on mail.tm."""
         address = AccountManager._generate_address(user, domain)
         if password is None:
@@ -290,7 +292,10 @@ class AccountManager:
         account = {"address": address, "password": password}
         data = make_api_request(HTTPVerb.POST, "accounts", data=account)
         data["password"] = password
-        return Account._from_dict(data)
+        account = Account._from_dict(data)
+        if auto_login:
+            account.get_jwt()
+        return account
 
     @staticmethod
     def login(address: str, password: str) -> Account:

@@ -8,9 +8,8 @@ from pymailtm.api import (Account, AccountManager, Domain, DomainManager,
 from random_username.generate import generate_username
 from requests.models import HTTPError
 
-# Ignoring type checkers errors here, since timeout_none is used only when developing
-from tests.conftest import (send_test_email, vcr_record, vcr_skip, vcr_delete_on_failure,
-                            timeout_five, timeout_three, timeout_none)  # type: ignore
+from tests.conftest import (send_test_email, vcr_record, vcr_delete_on_failure,
+                            timeout_five, timeout_none, vcr_skip)
 
 
 #
@@ -29,7 +28,9 @@ def ensure_at_least_a_message(account: Account) -> None:
         assert len(account.messages) > 0
 
 
+# Leaving here timeout_none and vcr_skip so that the type checker does not complain
 @timeout_none
+@vcr_skip
 class TestADomain:
     """Test: A Domain..."""
 
@@ -82,7 +83,7 @@ class TestADomainManager:
 
 @vcr_record
 @vcr_delete_on_failure
-@timeout_three
+@timeout_five
 class TestAnAccount:
     """Test: An Account..."""
 
@@ -112,22 +113,22 @@ class TestAnAccount:
 
     def test_can_login_after_being_created(self):
         """It can login after being created"""
-        account = AccountManager.new()
-        account.login()
+        account = AccountManager.new(auto_login=False)
+        jwt = account.get_jwt()
+        assert jwt == account.jwt
         assert type(account.jwt) is str
         assert len(account.jwt) > 0
 
     def test_should_have_a_method_to_verify_the_login(self):
         """It should have a method to verify the login"""
-        account = AccountManager.new()
+        account = AccountManager.new(auto_login=False)
         assert not account.is_logged_in()
-        account.login()
+        account.get_jwt()
         assert account.is_logged_in()
 
     def test_should_be_possible_to_delete_it(self):
         """It should be possible to delete it"""
         account = AccountManager.new()
-        account.login()
         account.delete()
         with pytest.raises(HTTPError) as err:
             AccountManager.login(account.address, account.password)
@@ -136,7 +137,7 @@ class TestAnAccount:
 
     def test_should_raise_an_exception_when_trying_to_delete_an_account_without_login(self):
         """It should raise an exception when trying to delete an account without login"""
-        account = AccountManager.new()
+        account = AccountManager.new(auto_login=False)
         with pytest.raises(HTTPError) as err:
             account.delete()
         assert "401 Client Error: Unauthorized" in err.value.args[0]
@@ -144,22 +145,15 @@ class TestAnAccount:
     def test_should_be_able_to_download_its_messages_intro(self):
         """It should be able to download its messages intro."""
         account = AccountManager.new()
-        account.login()
-
         # This helper function calls account.get_all_messages_intro()
         ensure_at_least_a_message(account)
-
         assert isinstance(account.messages[0], Message)
         assert account.messages[0].subject == 'subject'
 
-    @timeout_five
     def test_should_maintain_a_full_message_cache(self):
         """It should maintain a full message cache"""
         account = AccountManager.new()
-        account.login()
-
         ensure_at_least_a_message(account)
-
         # Download full message
         assert not account.messages[0].is_full_message
         for message in account.messages:
@@ -172,7 +166,7 @@ class TestAnAccount:
 
     def test_will_raise_an_exception_when_trying_to_download_messages_without_having_logged_in(self):
         """It will raise an exception when trying to download messages without having logged in"""
-        account = AccountManager.new()
+        account = AccountManager.new(auto_login=False)
         with pytest.raises(HTTPError) as err:
             account.get_all_messages_intro()
         assert "401 Client Error: Unauthorized" in err.value.args[0]
@@ -196,7 +190,6 @@ class TestAnAccount:
     def test_can_be_manually_refreshed(self):
         """It can be manually refreshed"""
         account = AccountManager.new()
-        account.login()
         before = account.used
         ensure_at_least_a_message(account)
         assert before == account.used
@@ -206,7 +199,7 @@ class TestAnAccount:
 
 @vcr_record
 @vcr_delete_on_failure
-@timeout_three
+@timeout_five
 class TestAnAccountManager:
     """Test: An AccountManager..."""
 
@@ -236,6 +229,7 @@ class TestAnAccountManager:
     def test_should_be_able_to_create_an_account_with_no_arguments(self):
         """It should be able to create an account with no arguments"""
         account = AccountManager.new()
+        assert account.is_logged_in()
         assert isinstance(account, Account)
         assert len(account.address) > 0
         assert len(account.password) == 6
@@ -246,7 +240,8 @@ class TestAnAccountManager:
         user = generate_username(1)[0].lower()
         domain = DomainManager.get_active_domains()[0].domain
         password = "secure"
-        account = AccountManager.new(user=user, domain=domain, password=password)
+        account = AccountManager.new(user=user, domain=domain, password=password, auto_login=False)
+        assert not account.is_logged_in()
         assert isinstance(account, Account)
         assert account.address == f"{user}@{domain}"
         assert account.password == password
@@ -254,13 +249,14 @@ class TestAnAccountManager:
     def test_should_pass_along_exception_when_creating_users(self):
         """It should pass along exception when creating users"""
         user = generate_username(1)[0].lower()
-        AccountManager.new(user=user)
+        AccountManager.new(user=user, auto_login=False)
         with pytest.raises(HTTPError):
             AccountManager.new(user=user)
 
     def test_should_be_able_to_get_a_jwt(self):
         """It should be able to get a JWT"""
-        account = AccountManager.new()
+        account = AccountManager.new(auto_login=False)
+        assert account.jwt is None
         jwt = AccountManager.get_jwt(account.address, account.password)
         assert type(jwt) is str
         assert len(jwt) > 0
@@ -272,7 +268,7 @@ class TestAnAccountManager:
 
     def test_should_be_able_to_login(self):
         """It should be able to login"""
-        account = AccountManager.new()
+        account = AccountManager.new(auto_login=False)
         logged_account = AccountManager.login(account.address, account.password)
         assert isinstance(logged_account, Account)
         assert logged_account.address == account.address
@@ -283,24 +279,26 @@ class TestAnAccountManager:
 
     def test_should_raise_an_exception_when_loggin_in_with_the_wrong_credentials(self):
         """It should raise an exception when loggin in with the wrong credentials"""
-        account = AccountManager.new()
+        account = AccountManager.new(auto_login=False)
         with pytest.raises(HTTPError) as err:
             AccountManager.login(account.address, "wrong_pass")
         assert '401 Client Error: Unauthorized' in err.value.args[0]
 
     def test_can_return_account_data_from_the_id_and_a_jwt(self):
         """It can return account data from the id and a jwt"""
-        account = AccountManager.new()
+        account = AccountManager.new(auto_login=False)
         jwt = AccountManager.get_jwt(account.address, account.password)
+        # This check the request on /me
         account_data = AccountManager.get_account_data(jwt)
         assert account.id == account_data["id"]
+        # This check the request on /accounts/{id}
         account_data = AccountManager.get_account_data(jwt, account.id)
         assert account.id == account_data["id"]
 
 
 @vcr_record
 @vcr_delete_on_failure
-@timeout_three
+@timeout_five
 class TestAMessage:
     """Test: A Message..."""
 
@@ -311,7 +309,6 @@ class TestAMessage:
     @pytest.fixture(scope="class", autouse=True)
     def setup(self, request, vcr_setup, vcr_delete_setup_cassette_on_failure):
         request.cls.account = AccountManager.new()
-        request.cls.account.login()
         request.cls.data = {
             "id": "60bfa3ebf944810cc4987a6a",
             "accountId": "/accounts/60bdfa42aa8bf07f8c2cf886",
@@ -481,7 +478,6 @@ class TestAMessage:
         assert message.text == self.data_full["text"]
         assert message.is_full_message
 
-    @timeout_five
     def test_should_have_a_method_to_download_the_full_message_data(self):
         """It should have a method to download the full message data"""
         account = self.account
@@ -506,7 +502,6 @@ class TestAMessage:
         account.get_all_messages_intro()
         assert len(account.messages) == messages_before - 1
 
-    @timeout_five
     def test_should_be_markable_as_seen(self):
         """It should be markable as seen"""
         account = self.account
