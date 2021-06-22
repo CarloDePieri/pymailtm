@@ -8,8 +8,8 @@ from pymailtm.api import (Account, AccountManager, Domain, DomainManager,
 from random_username.generate import generate_username
 from requests.models import HTTPError
 
-from tests.conftest import (send_test_email, vcr_record, vcr_delete_on_failure,
-                            timeout_five, timeout_none, vcr_skip)
+from tests.conftest import (send_test_email, timeout_five, timeout_none,
+                            vcr_delete_on_failure, vcr_record, vcr_skip)
 
 
 #

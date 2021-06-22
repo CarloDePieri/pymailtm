@@ -7,6 +7,7 @@ import string
 from typing import Type
 
 import pytest
+import vcr
 import yagmail
 from _pytest.python import Function
 from pymailtm import MailTm
@@ -72,6 +73,10 @@ def vcr_delete_test_cassette_on_failure(request):
     if request.node.rep_setup.failed or request.node.rep_call.failed:
         # This particular 'setup' reports consists of function scoped fixtures used by the test
         # For the class scoped setup, use vcr_delete_setup_cassette_on_failure fixture in the setup
+        # ---
+        # Mark to be deleted the test setup cassette
+        _mark_class_setup_cassette_for_deletion(request.node.cls)
+        # Mark to be deleted the actual test cassette
         _mark_test_cassette_for_deletion(request.node)
 
 
@@ -88,7 +93,6 @@ def vcr_delete_setup_cassette_on_failure(request):
 def vcr_setup(request):
     """Fixture that allows vcr recording in a class setup.
     It must be called as a fixture dependency in the class setup fixture (no usefixtures mark)."""
-    import vcr
     node_id = request.node.nodeid
     el = node_id.split("::")
     path = el[0].replace("tests/", f"{default_cassettes_path}/").replace(".py", "")
