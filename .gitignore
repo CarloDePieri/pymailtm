@@ -1,7 +1,7 @@
 .venv
 */__pycache__/
 dist/
-/.gmail.json
+/.secrets.json
 coverage/
 /.projections.json
 /.vimspector.json

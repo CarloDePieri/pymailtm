@@ -5,14 +5,32 @@ import re
 import shutil
 import string
 from typing import Type
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 import pytest
-import vcr
+import vcr as _vcr
 import yagmail
 from _pytest.python import Function
 from pymailtm import MailTm
+from vcr.serialize import deserialize, serialize
 
 default_cassettes_path = "tests/cassettes"
+
+# This option will make vcrpy encrypt all cassettes. Can be turned off to inspect cassette
+encrypt_cassettes = True
+
+# Recover from the config file or the env my secrets
+secrets_file = ".secrets.json"
+if os.path.isfile(secrets_file):
+    with open(secrets_file, "r") as f:
+        data = json.load(f)
+        gmail_mail = data["mail"]
+        gmail_password = data["password"]
+        encryption_key = data["encryption_key"]
+else:
+    gmail_mail = os.environ['GMAIL_ADDR']
+    gmail_password = os.environ['GMAIL_PASS']
+    encryption_key = os.environ['ENCRYPTION_KEY']
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
@@ -75,7 +93,8 @@ def vcr_delete_test_cassette_on_failure(request):
         # For the class scoped setup, use vcr_delete_setup_cassette_on_failure fixture in the setup
         # ---
         # Mark to be deleted the test setup cassette
-        _mark_class_setup_cassette_for_deletion(request.node.cls)
+        # NOTE: leaving this turned off for now. Deleting the setup vcr can invalidate the cache for other tests as well
+        # _mark_class_setup_cassette_for_deletion(request.node.cls)
         # Mark to be deleted the actual test cassette
         _mark_test_cassette_for_deletion(request.node)
 
@@ -97,7 +116,10 @@ def vcr_setup(request):
     el = node_id.split("::")
     path = el[0].replace("tests/", f"{default_cassettes_path}/").replace(".py", "")
     name = f"{el[1]}_setup"
-    with vcr.use_cassette(f"{path}/{name}.yaml"):
+    setup_vcr = _vcr.VCR(record_mode=["once"])
+    if encrypt_cassettes:
+        setup_vcr.register_persister(EncryptedFilesystemPersister)
+    with setup_vcr.use_cassette(f"{path}/{name}.yaml"):
         yield
 
 
@@ -109,8 +131,10 @@ def delete_marked_cassettes(request):
     yield
     marked_cassettes = getattr(request.cls, '_marked_cassettes', [])
     for cassette in marked_cassettes:
-        if os.path.exists(cassette):
-            os.remove(cassette)
+        # Delete both the encrypted and the decrypted cassette
+        for path in [cassette, f"{cassette}.enc"]:
+            if os.path.exists(path):
+                os.remove(path)
 
 
 # Decorator used as a shortcut for vcr_delete_test_cassette_on_failure fixture
@@ -128,6 +152,45 @@ timeout_fifteen = pytest.mark.timeout(15, method='signal')
 timeout_none = pytest.mark.timeout(-1, method='signal')
 
 
+class EncryptedFilesystemPersister:
+    """VCR custom persister that will encrypt and decrypt cassettes with AES-GCM on disk."""
+
+    # NOTE: cryptography encourages the use of Fernet which is a AES-CBC + HMAC but AES-GCM is
+    # twice as fast and equally secure as long as nonce are unique
+
+    @classmethod
+    def load_cassette(cls, cassette_path, serializer):
+        try:
+            with open(f"{cassette_path}.enc", "rb") as f:
+                nonce, tagged_ciphertext = [f.read(x) for x in (12, -1)]
+        except OSError:
+            raise ValueError("Cassette not found.")
+        # decrypt the cassette with aes-gcm
+        cipher = AESGCM(encryption_key.encode())
+        # no Authenticated Associated Data (aad) was used, hence None
+        cassette_content = cipher.decrypt(nonce, tagged_ciphertext, None)
+        # Deserialize it
+        cassette = deserialize(cassette_content, serializer)
+        return cassette
+
+    @staticmethod
+    def save_cassette(cassette_path, cassette_dict, serializer):
+        data = serialize(cassette_dict, serializer)
+        dirname, _ = os.path.split(cassette_path)
+        if dirname and not os.path.exists(dirname):
+            os.makedirs(dirname)
+        # encrypt the cassette with aes-gcm
+        cipher = AESGCM(encryption_key.encode())
+        # make sure the nonce is unique every time
+        nonce = os.urandom(12)
+        # no Authenticated Associated Data (aad) is needed; cryptography implementation
+        # will bundle the tag together with the ciphertext
+        tagged_ciphertext = cipher.encrypt(nonce, data.encode(), None)
+        # save to the file both the nonce and the budled tag and ciphertext
+        with open(f"{cassette_path}.enc", "wb") as f:
+            [f.write(x) for x in (nonce, tagged_ciphertext)]
+
+
 #
 # Default configuration for pytest-recording
 #
@@ -137,6 +200,14 @@ timeout_none = pytest.mark.timeout(-1, method='signal')
 @pytest.fixture(scope="module")
 def vcr_config():
     return {"record_mode": ["once"]}
+
+
+#
+# Configuration hook for pytest-recording: in here the vcr object can be accessed
+#
+def pytest_recording_configure(config, vcr):
+    if encrypt_cassettes:
+        vcr.register_persister(EncryptedFilesystemPersister)
 
 
 #
@@ -158,14 +229,5 @@ def backup_config():
 
 def send_test_email(to: str) -> None:
     """ Send an email using gmail credentials specified in the .gmail.json file """
-    if os.path.isfile(".gmail.json"):
-        with open(".gmail.json", "r") as f:
-            data = json.load(f)
-            mail = data["mail"]
-            password = data["password"]
-    else:
-        print('env')
-        mail = os.environ['GMAIL_ADDR']
-        password = os.environ['GMAIL_PASS']
-    yag = yagmail.SMTP(mail, password)
+    yag = yagmail.SMTP(gmail_mail, gmail_password)
     yag.send(to, 'subject', 'test')

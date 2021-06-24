@@ -9,7 +9,7 @@ import string
 
 from random_username.generate import generate_username
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Union, cast
 
 
 api_address = "https://api.mail.tm"
@@ -92,9 +92,9 @@ class Account:
     def refresh(self) -> None:
         """Download account data and update fields that could have changed."""
         # Type checkers would complain at the following line about the self.jwt type (which
-        # could be None) without 'type: ignore'. That case is handled by the request exception 401,
+        # could be None) without the cast. That case is handled by the request exception 401,
         # so no need to handle it here.
-        data = AccountManager.get_account_data(self.jwt, self.id)  # type: ignore
+        data = AccountManager.get_account_data(cast(str, self.jwt), self.id)
         self.used = data["used"]
         self.isDisabled = data["isDisabled"]
         self.updatedAt = data["updatedAt"]
