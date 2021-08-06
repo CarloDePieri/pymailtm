@@ -45,15 +45,17 @@ pyperclip = "^1.8.2"
 [tool.poetry.dev-dependencies]
 anyio = "^2.2.0"
 coveralls = "^3.0.1"
-cryptography = "^3.4.7"
 pytest = "^6.2.2"
 pytest-cov = "^2.11.1"
 pytest-mock = "^3.5.1"
+pytest-recording = "^0.11.0"
 pytest-sugar = "^0.9.4"
 pytest-spec = "^3.1.0"
 pytest-timeout = "^1.4.2"
 PyYAML = "^5.4.1"
 yagmail = "^0.14.245"
+vcrpy-encrypt = "^0.9.0"
+flake8 = "^3.9.2"
 
 [build-system]
 requires = ["poetry_core>=1.0.0"]

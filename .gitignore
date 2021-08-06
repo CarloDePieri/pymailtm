@@ -7,7 +7,7 @@ coverage/
 /.vimspector.json
 .vim/
 /.coverage
-tests/cassettes/
+*.clear_text
 /.coveralls.yml
 /.secrets
 .vscode

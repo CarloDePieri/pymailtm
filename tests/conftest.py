@@ -4,15 +4,14 @@ import random
 import re
 import shutil
 import string
-from typing import Type
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-
-import pytest
-import vcr as _vcr
 import yagmail
+import vcr as _vcr
+import pytest
 from _pytest.python import Function
+from typing import Type
+from vcrpy_encrypt import BaseEncryptedPersister
+
 from pymailtm import MailTm
-from vcr.serialize import deserialize, serialize
 
 default_cassettes_path = "tests/cassettes"
 
@@ -31,6 +30,14 @@ else:
     gmail_mail = os.environ['GMAIL_ADDR']
     gmail_password = os.environ['GMAIL_PASS']
     encryption_key = os.environ['ENCRYPTION_KEY']
+
+
+#
+# Encrypted persister that takes care of cassette encryption/decryption
+#
+class MyEncryptedPersister(BaseEncryptedPersister):
+    encryption_key = encryption_key.encode("UTF-8")
+    should_output_clear_text_as_well = True
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
@@ -118,7 +125,7 @@ def vcr_setup(request):
     name = f"{el[1]}_setup"
     setup_vcr = _vcr.VCR(record_mode=["once"])
     if encrypt_cassettes:
-        setup_vcr.register_persister(EncryptedFilesystemPersister)
+        setup_vcr.register_persister(MyEncryptedPersister)
     with setup_vcr.use_cassette(f"{path}/{name}.yaml"):
         yield
 
@@ -152,45 +159,6 @@ timeout_fifteen = pytest.mark.timeout(15, method='signal')
 timeout_none = pytest.mark.timeout(-1, method='signal')
 
 
-class EncryptedFilesystemPersister:
-    """VCR custom persister that will encrypt and decrypt cassettes with AES-GCM on disk."""
-
-    # NOTE: cryptography encourages the use of Fernet which is a AES-CBC + HMAC but AES-GCM is
-    # twice as fast and equally secure as long as nonce are unique
-
-    @classmethod
-    def load_cassette(cls, cassette_path, serializer):
-        try:
-            with open(f"{cassette_path}.enc", "rb") as f:
-                nonce, tagged_ciphertext = [f.read(x) for x in (12, -1)]
-        except OSError:
-            raise ValueError("Cassette not found.")
-        # decrypt the cassette with aes-gcm
-        cipher = AESGCM(encryption_key.encode())
-        # no Authenticated Associated Data (aad) was used, hence None
-        cassette_content = cipher.decrypt(nonce, tagged_ciphertext, None)
-        # Deserialize it
-        cassette = deserialize(cassette_content, serializer)
-        return cassette
-
-    @staticmethod
-    def save_cassette(cassette_path, cassette_dict, serializer):
-        data = serialize(cassette_dict, serializer)
-        dirname, _ = os.path.split(cassette_path)
-        if dirname and not os.path.exists(dirname):
-            os.makedirs(dirname)
-        # encrypt the cassette with aes-gcm
-        cipher = AESGCM(encryption_key.encode())
-        # make sure the nonce is unique every time
-        nonce = os.urandom(12)
-        # no Authenticated Associated Data (aad) is needed; cryptography implementation
-        # will bundle the tag together with the ciphertext
-        tagged_ciphertext = cipher.encrypt(nonce, data.encode(), None)
-        # save to the file both the nonce and the budled tag and ciphertext
-        with open(f"{cassette_path}.enc", "wb") as f:
-            [f.write(x) for x in (nonce, tagged_ciphertext)]
-
-
 #
 # Default configuration for pytest-recording
 #
@@ -207,7 +175,7 @@ def vcr_config():
 #
 def pytest_recording_configure(config, vcr):
     if encrypt_cassettes:
-        vcr.register_persister(EncryptedFilesystemPersister)
+        vcr.register_persister(MyEncryptedPersister)
 
 
 #
