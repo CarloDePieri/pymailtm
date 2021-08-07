@@ -66,8 +66,12 @@ def _mark_cassette_for_deletion(cassette: str, test_class):
 def _mark_test_cassette_for_deletion(node: Function):
     """Mark a test cassette for deletion."""
     test = node.location[2]
-    path = node.location[0].replace("tests/", "tests/cassettes/").replace(".py", "")
-    cassette = f"{path}/{test}.yaml"
+    test_file_path = node.location[0]
+    cassette_path = os.path.join(
+        os.path.dirname(test_file_path),
+        "cassettes",
+        os.path.basename(test_file_path).replace(".py", ""))
+    cassette = f"{cassette_path}/{test}.yaml"
     _mark_cassette_for_deletion(cassette, node.cls)
 
 
@@ -138,8 +142,10 @@ def delete_marked_cassettes(request):
     yield
     marked_cassettes = getattr(request.cls, '_marked_cassettes', [])
     for cassette in marked_cassettes:
-        # Delete both the encrypted and the decrypted cassette
-        for path in [cassette, f"{cassette}.enc"]:
+        # Delete both the encrypted and the clear text cassette
+        enc_ext = MyEncryptedPersister.encoded_suffix
+        clear_ext = MyEncryptedPersister.clear_text_suffix
+        for path in [f"{cassette}{enc_ext}", f"{cassette}{clear_ext}"]:
             if os.path.exists(path):
                 os.remove(path)
 
