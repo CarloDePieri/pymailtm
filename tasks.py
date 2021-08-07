@@ -70,6 +70,7 @@ def test_spec(c, full=False):
 @task()
 def clear_cassettes(c):
     c.run("rm -rf tests/cassettes")
+    c.run("rm -rf tests/api/cassettes")
     print("Cleared!")
 
 
