@@ -39,7 +39,6 @@ else:
 class MyEncryptedPersister(BaseEncryptedPersister):
     encryption_key = encryption_key.encode("UTF-8")
     should_output_clear_text_as_well = True
-    clear_text_suffix = ""
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)

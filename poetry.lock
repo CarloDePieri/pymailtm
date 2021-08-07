@@ -534,7 +534,7 @@ yarl = {version = "*", markers = "python_version >= \"3.6\""}
 
 [[package]]
 name = "vcrpy-encrypt"
-version = "0.9.0"
+version = "0.9.1"
 description = "Encrypt vcrpy cassettes so they can be safely kept under version control."
 category = "dev"
 optional = false
@@ -594,7 +594,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "9af29ae3c716f4ecba451f1174d465b9dff1deca8cc5b58edd8424f9b83dd1f0"
+content-hash = "2efcc67148813c16611b58055471481b13dd0e70f6e36f718bf988f9cedd2e20"
 
 [metadata.files]
 anyio = [
@@ -974,8 +974,8 @@ vcrpy = [
     {file = "vcrpy-4.1.1.tar.gz", hash = "sha256:57095bf22fc0a2d99ee9674cdafebed0f3ba763018582450706f7d3a74fff599"},
 ]
 vcrpy-encrypt = [
-    {file = "vcrpy-encrypt-0.9.0.tar.gz", hash = "sha256:09bb69928fe616de3cd49d70e9fa771781d90bdd614b99839c8dd6730f52f741"},
-    {file = "vcrpy_encrypt-0.9.0-py3-none-any.whl", hash = "sha256:a1503d45306e94f8eb2132e83c4addf76c2d81cc1febb43626efb2d5816f78e0"},
+    {file = "vcrpy-encrypt-0.9.1.tar.gz", hash = "sha256:58f01d79ffb037354519bca4b05c243502456949fb4b2bad845c7a3a5164ac64"},
+    {file = "vcrpy_encrypt-0.9.1-py3-none-any.whl", hash = "sha256:e9df1158dfc41b673365fd77d42f19e21a9a394fdbe19bebec4ca25de9f8fe98"},
 ]
 wrapt = [
     {file = "wrapt-1.12.1.tar.gz", hash = "sha256:b62ffa81fb85f4332a4f609cab4ac40709470da05643a082ec1eb88e6d9b97d7"},

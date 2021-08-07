@@ -54,7 +54,7 @@ pytest-spec = "^3.1.0"
 pytest-timeout = "^1.4.2"
 PyYAML = "^5.4.1"
 yagmail = "^0.14.245"
-vcrpy-encrypt = "^0.9.0"
+vcrpy-encrypt = "^0.9.1"
 flake8 = "^3.9.2"
 
 [build-system]
