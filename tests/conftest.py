@@ -1,3 +1,4 @@
+import functools
 import json
 import os
 import random
@@ -38,6 +39,7 @@ else:
 class MyEncryptedPersister(BaseEncryptedPersister):
     encryption_key = encryption_key.encode("UTF-8")
     should_output_clear_text_as_well = True
+    clear_text_suffix = ""
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
@@ -63,23 +65,31 @@ def _mark_cassette_for_deletion(cassette: str, test_class):
     test_class._marked_cassettes = _marked_cassettes
 
 
+def _get_cassette_path(test_file_path: str) -> str:
+    """Return the cassette path given the test file path."""
+    return os.path.join(
+        os.path.dirname(test_file_path),
+        "cassettes",
+        os.path.basename(test_file_path).replace(".py", ""))
+
+
 def _mark_test_cassette_for_deletion(node: Function):
     """Mark a test cassette for deletion."""
     test = node.location[2]
     test_file_path = node.location[0]
-    cassette_path = os.path.join(
-        os.path.dirname(test_file_path),
-        "cassettes",
-        os.path.basename(test_file_path).replace(".py", ""))
+    cassette_path = _get_cassette_path(test_file_path)
     cassette = f"{cassette_path}/{test}.yaml"
     _mark_cassette_for_deletion(cassette, node.cls)
 
 
 def _mark_class_setup_cassette_for_deletion(test_class: Type):
     """Mark a class setup cassette for deletion."""
-    path = f"{default_cassettes_path}/{test_class.__module__}"
-    name = f"{test_class.__name__}_setup"
-    cassette = f"{path}/{name}.yaml"
+    module = test_class.__module__
+    module_name = module.split(".")[-1:][0]
+    module_path = functools.reduce(lambda a, b: f"{a}/{b}", module.split(".")[:-1])
+    cassette_folder = os.path.join(module_path, "cassettes", module_name)
+    cassette_name = f"{test_class.__name__}_setup.yaml"
+    cassette = os.path.join(cassette_folder, cassette_name)
     _mark_cassette_for_deletion(cassette, test_class)
 
 
@@ -125,7 +135,7 @@ def vcr_setup(request):
     It must be called as a fixture dependency in the class setup fixture (no usefixtures mark)."""
     node_id = request.node.nodeid
     el = node_id.split("::")
-    path = el[0].replace("tests/", f"{default_cassettes_path}/").replace(".py", "")
+    path = _get_cassette_path(el[0])
     name = f"{el[1]}_setup"
     setup_vcr = _vcr.VCR(record_mode=["once"])
     if encrypt_cassettes:
