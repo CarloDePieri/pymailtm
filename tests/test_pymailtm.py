@@ -80,7 +80,7 @@ class TestAMailtmClass:
         jwt = MailTm._make_account_request("token", address, password)
         assert "token" in jwt
         assert "id" in jwt
-        
+
     def test_should_be_able_to_save_an_account_to_disk(self):
         """... it should be able to save an account to disk"""
         address, password, _ = create_new_account()

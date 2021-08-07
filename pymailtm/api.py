@@ -346,7 +346,7 @@ class DomainNotAvailableException(Exception):
 
 # Helpers
 class HTTPVerb(Enum):
-    """Convenient way to express pass an argument to make_api_request."""
+    """Convenient way to pass an argument to make_api_request."""
     GET = partial(requests.get)
     POST = partial(requests.post)
     DELETE = partial(requests.delete)
