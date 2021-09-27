@@ -17,29 +17,30 @@ from typing import Dict
 class Account:
     """Representing a temprary mailbox."""
 
-    def __init__(self, id, address, password):
+    def __init__(self, id, address, password, proxies=None):
         self.id_ = id
         self.address = address
         self.password = password
         # Set the JWT
         jwt = MailTm._make_account_request("token",
-                                           self.address, self.password)
+                                           self.address, self.password, proxies=proxies)
         self.auth_headers = {
             "accept": "application/ld+json",
             "Content-Type": "application/json",
             "Authorization": "Bearer {}".format(jwt["token"])
         }
         self.api_address = MailTm.api_address
+        self.proxies = proxies
 
     def get_messages(self, page=1):
         """Download a list of messages currently in the account."""
         r = requests.get("{}/messages?page={}".format(self.api_address, page),
-                         headers=self.auth_headers)
+                         headers=self.auth_headers, proxies=self.proxies)
         messages = []
         for message_data in r.json()["hydra:member"]:
             # recover full message
             r = requests.get(
-                f"{self.api_address}/messages/{message_data['id']}", headers=self.auth_headers)
+                f"{self.api_address}/messages/{message_data['id']}", headers=self.auth_headers, proxies=self.proxies)
             text = r.json()["text"]
             html = r.json()["html"]
             # prepare the mssage object
@@ -57,7 +58,7 @@ class Account:
     def delete_account(self):
         """Try to delete the account. Returns True if it succeeds."""
         r = requests.delete("{}/accounts/{}".format(self.api_address,
-                                                    self.id_), headers=self.auth_headers)
+                                                    self.id_), headers=self.auth_headers, proxies=self.proxies)
         return r.status_code == 204
 
     def monitor_account(self):
@@ -134,8 +135,11 @@ class MailTm:
     api_address = "https://api.mail.tm"
     db_file = os.path.join(Path.home(), ".pymailtm")
 
+    def __init__(self, proxies=None):
+        self.proxies = proxies
+
     def _get_domains_list(self):
-        r = requests.get("{}/domains".format(self.api_address))
+        r = requests.get("{}/domains".format(self.api_address), proxies=self.proxies)
         response = r.json()
         domains = list(map(lambda x: x["domain"], response["hydra:member"]))
         return domains
@@ -147,8 +151,8 @@ class MailTm:
         address = "{}@{}".format(username, domain)
         if not password:
             password = self._generate_password(6)
-        response = self._make_account_request("accounts", address, password)
-        account = Account(response["id"], response["address"], password)
+        response = self._make_account_request("accounts", address, password, proxies=self.proxies)
+        account = Account(response["id"], response["address"], password, proxies=self.proxies)
         self._save_account(account)
         return account
 
@@ -157,14 +161,14 @@ class MailTm:
         return ''.join(random.choice(letters) for i in range(length))
 
     @staticmethod
-    def _make_account_request(endpoint, address, password):
+    def _make_account_request(endpoint, address, password, proxies=None):
         account = {"address": address, "password": password}
         headers = {
             "accept": "application/ld+json",
             "Content-Type": "application/json"
         }
         r = requests.post("{}/{}".format(MailTm.api_address, endpoint),
-                          data=json.dumps(account), headers=headers)
+                          data=json.dumps(account), headers=headers, proxies=proxies)
         if r.status_code not in [200, 201]:
             raise CouldNotGetAccountException()
         return r.json()
