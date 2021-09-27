@@ -151,7 +151,7 @@ class MailTm:
         if not password:
             password = self._generate_password(6)
         response = self._make_account_request("accounts", address, password, proxies=self.proxies)
-        account = Account(response["id"], response["address"], password)
+        account = Account(response["id"], response["address"], password, proxies=self.proxies)
         self._save_account(account)
         return account
 
