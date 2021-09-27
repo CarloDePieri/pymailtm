@@ -132,10 +132,11 @@ class MailTm:
     """A python wrapper for mail.tm web api, which is documented here:
        https://api.mail.tm/"""
 
+    api_address = "https://api.mail.tm"
+    db_file = os.path.join(Path.home(), ".pymailtm")
+
     def __init__(self, proxies=None):
-        self.api_address = "https://api.mail.tm"
         self.proxies = proxies
-        self.db_file = os.path.join(Path.home(), ".pymailtm")
 
     def _get_domains_list(self):
         r = requests.get("{}/domains".format(self.api_address), proxies=self.proxies)
