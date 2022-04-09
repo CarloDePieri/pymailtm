@@ -1,17 +1,17 @@
 import json
 import os
-import pyperclip
 import random
-import requests
 import string
 import webbrowser
-
-from random_username.generate import generate_username
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from time import sleep
 from typing import Dict
+
+import pyperclip
+import requests
+from random_username.generate import generate_username
 
 
 class Account:
@@ -86,7 +86,6 @@ class Message:
     def open_web(self):
         """Open a temporary html file with the mail inside in the browser."""
         with NamedTemporaryFile(mode="w", delete=False, suffix=".html") as f:
-
             html = self.html[0].replace("\n", "<br>").replace("\r", "")
             message = """<html>
             <head></head>
@@ -106,6 +105,9 @@ class Message:
             # browser can load it safely
             sleep(1)
             #  os.remove(file_name)
+
+    def return_info(self):
+        return self.id_, self.from_, self.to, self.text, self.html
 
 
 def open_webbrowser(link: str) -> None:
@@ -200,10 +202,12 @@ class MailTm:
         return it.
 
         :param new: bool - force the creation of a new account"""
+
         def _new():
             account = self.get_account()
             print("New account created and copied to clipboard: {}".format(account.address), flush=True)
             return account
+
         if new:
             account = _new()
         else:
