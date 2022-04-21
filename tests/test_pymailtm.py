@@ -4,14 +4,14 @@ import pytest
 import pyperclip
 import threading
 import webbrowser
-from typing import Tuple, Callable, Dict
+from typing import Tuple, Dict
 from time import sleep
-from unittest.mock import patch, create_autospec, mock_open
+from unittest.mock import create_autospec
 from queue import Queue
 
 from pymailtm import MailTm, Account
 from pymailtm.pymailtm import generate_username, CouldNotGetAccountException, InvalidDbAccountException, open_webbrowser, Message
-from tests.conftest import send_test_email
+from tests.conftest import send_test_email, vcr_delete_on_fail
 
 
 #
@@ -34,6 +34,7 @@ def read_config() -> Dict[str, str]:
         data = json.load(db)
     return data
 
+
 # Custom exception used to interrupt loops
 class DoneTestingException(Exception):
     """Done testing!"""
@@ -42,6 +43,7 @@ class DoneTestingException(Exception):
 #
 # Tests
 #
+@vcr_delete_on_fail
 @pytest.mark.vcr
 class TestAMailtmClass:
     """A MailTm class..."""
@@ -145,8 +147,9 @@ class TestAMailtmClass:
         
         _open_account_spy.assert_called()
         mock_account.monitor_account.assert_called()
-        
 
+
+@vcr_delete_on_fail
 @pytest.mark.vcr
 class TestAMailtmAccount:
     """A MailTm Account..."""
@@ -240,6 +243,7 @@ class TestAMailtmAccount:
             raise result
 
 
+@vcr_delete_on_fail
 @pytest.mark.vcr
 class TestWhenMailtmOpensAnAccount:
     """When MailTm opens an account..."""
@@ -278,7 +282,6 @@ class TestWhenMailtmOpensAnAccount:
         mocked_copy.assert_called_once_with(acc.address)
         assert account.address == acc.address
 
-
     def test_should_create_a_new_account_if_required(self, mocker):
         """... it should create a new account if required"""
         mt = MailTm()
@@ -306,7 +309,6 @@ class TestTheOpenWebbrowserUtility():
         mocked_open = mocker.patch("pymailtm.pymailtm.webbrowser.open", new=create_autospec(webbrowser.open))
         open_webbrowser(url)
         mocked_open.assert_called_once_with(url)
-
 
 
 class TestAMailMessage():

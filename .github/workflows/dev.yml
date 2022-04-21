@@ -28,6 +28,7 @@ jobs:
       is_cron: ${{ github.event_name == 'schedule' }}
       GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
       GMAIL_ADDR: ${{ secrets.GMAIL_ADDR }}
+      ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
       python_version: '3.7.10'
 
     steps:

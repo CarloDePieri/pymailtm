@@ -53,6 +53,10 @@ pytest-spec = "^3.1.0"
 pytest-timeout = "^1.4.2"
 coveralls = "^3.0.1"
 PyYAML = "^5.4.1"
+pytest-recording = "^0.12.0"
+pytest-vcr-delete-on-fail = "^0.9.0"
+python-dotenv = "^0.20.0"
+vcrpy-encrypt = "^0.9.1"
 
 [build-system]
 requires = ["poetry_core>=1.0.0"]

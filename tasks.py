@@ -49,10 +49,12 @@ def publish(c):
 
 
 @task()
-def test(c, full=False, s=False):
+def test(c, full=False, s=False, t=False):
     marks = ""
     capture = ""
-    if not full:
+    if t:
+        marks = " -m 'runthis'"
+    elif not full:
         marks = " -m 'not graphical'"
     if s:
         capture = " -s"
