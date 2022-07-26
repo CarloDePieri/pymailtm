@@ -194,8 +194,30 @@ class TestAMailtmAccount:
         assert message.text == "test"
 
     @pytest.mark.timeout(15)
-    def test_should_be_able_to_wait_for_new_messages(self, mocker):
-        """... it should be able to wait for new messages"""
+    def test_should_be_able_to_wait_for_and_return_a_new_message(self):
+        """... it should be able to wait for and return a new message"""
+        account = MailTm().get_account()
+
+        def send_from_another_thread(acc: Account) -> None:
+            # wait for 1 second, so that the main thread can launch the wait_for_message
+            sleep(2)
+            # send the test email
+            send_test_email(acc.address)
+
+        # Create a thread that will send the test email
+        sender_thread = threading.Thread(target=send_from_another_thread, args=(account,))
+        # The sender thread must be a daemon, because if the test fails that thread must terminate
+        sender_thread.daemon = True
+        # Start the thread
+        sender_thread.start()
+
+        # If something goes wrong and the following does not return this function will time out!
+        msg = account.wait_for_message()
+        assert msg.text == "test"
+
+    @pytest.mark.timeout(15)
+    def test_should_be_able_to_monitor_new_messages(self, mocker):
+        """... it should be able to monitor new messages"""
         account = MailTm().get_account()
 
         # Function that will be launched as the monitoring thread

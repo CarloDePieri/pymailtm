@@ -60,18 +60,19 @@ class Account:
                                                     self.id_), headers=self.auth_headers)
         return r.status_code == 204
 
-    def monitor_account(self, once=False):
-        """If once is false, keep waiting for new messages and open them in the browser.
-           Otherwise, return the message observed for further use."""
+    def wait_for_message(self):
+        """Wait for a new message to arrive, then return it."""
+        start = len(self.get_messages())
+        while len(self.get_messages()) == start:
+            sleep(1)
+        return self.get_messages()[0]
+
+    def monitor_account(self):
+        """Keep waiting for new messages and open them in the browser."""
         while True:
             print("\nWaiting for new messages...")
-            start = len(self.get_messages())
-            while len(self.get_messages()) == start:
-                sleep(1)
+            new_msg = self.wait_for_message()
             print("New message arrived!")
-            new_msg = self.get_messages()[0]
-            if once:
-                return new_msg
             new_msg.open_web()
 
 
@@ -173,10 +174,10 @@ class MailTm:
             raise CouldNotGetAccountException()
         return r.json()
 
-    def monitor_new_account(self, force_new=False, once=False):
+    def monitor_new_account(self, force_new=False):
         """Create a new account and monitor it for new messages."""
         account = self._open_account(new=force_new)
-        return account.monitor_account(once=once)
+        account.monitor_account()
 
     def _save_account(self, account: Account):
         """Save the account data for later use."""
