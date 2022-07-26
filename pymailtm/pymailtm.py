@@ -157,9 +157,10 @@ class MailTm:
         self._save_account(account)
         return account
 
-    def _generate_password(self, length):
+    @staticmethod
+    def _generate_password(length):
         letters = string.ascii_letters + string.digits
-        return ''.join(random.choice(letters) for i in range(length))
+        return ''.join(random.choice(letters) for _ in range(length))
 
     @staticmethod
     def _make_account_request(endpoint, address, password):
