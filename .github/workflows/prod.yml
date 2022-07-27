@@ -60,7 +60,7 @@ jobs:
       - name: Launch the tests (with coverage).
         run: inv test-cov
 
-      - name: Preapare the coveralls config.
+      - name: Prepare the coveralls config.
         run: |
           echo "repo_token: ${{ secrets.COVERALLS_TOKEN }}" > .coveralls.yml
 

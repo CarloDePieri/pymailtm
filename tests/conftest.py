@@ -15,10 +15,12 @@ from pymailtm import MailTm
 
 load_dotenv(".secrets")
 
+import binascii
+
 
 # Define the vcr persister
 class MyEncryptedPersister(BaseEncryptedPersister):
-    encryption_key: bytes = os.getenv("ENCRYPTION_KEY").encode("utf-8")
+    encryption_key: bytes = binascii.a2b_base64(os.getenv("ENCRYPTION_KEY"))
     should_output_clear_text_as_well = True
 
 
