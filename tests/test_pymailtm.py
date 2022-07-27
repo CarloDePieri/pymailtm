@@ -286,7 +286,6 @@ class TestWhenMailtmOpensAnAccount:
         spied_get.assert_called()
         mocked_copy.assert_called_once_with(acc.address)
 
-
     def test_should_be_be_able_to_recover_existing_account(self, mocker):
         """... it should be be able to recover existing account"""
         mt = MailTm()
@@ -320,6 +319,16 @@ class TestWhenMailtmOpensAnAccount:
         spied_get.assert_called()
         mocked_copy.assert_called_once_with(acc.address)
         assert account.address != acc.address
+
+    def test_it_should_not_crash_because_of_broken_pyperclip(self, mocker):
+        """... it should not crash because of broken pyperclip."""
+        mt = MailTm()
+
+        def crash_on_pyperclip_copy(_):
+            raise pyperclip.PyperclipException
+
+        mocker.patch("pymailtm.pymailtm.pyperclip.copy", new=crash_on_pyperclip_copy)
+        mt._open_account(new=True)
 
 
 class TestTheOpenWebbrowserUtility():
