@@ -98,11 +98,12 @@ def run(c, n=False, l=False):
     else:
         c.run("poetry run pymailtm", pty=True)
 
+
 #
 # ACT
 #
-act_dev_ctx = "act-dev-ci"
-act_prod_ctx = "act-prod-ci"
+act_dev_ctx = "act-pymailtm-dev"
+act_prod_ctx = "act-pymailtm-prod"
 act_secrets_file = ".secrets"
 
 
