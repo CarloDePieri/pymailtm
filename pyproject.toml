@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pymailtm"
-version = "1.1.0"
+version = "1.1.1"
 description = "A python web api wrapper and command line client for mail.tm."
 
 license = "GPL-3.0-only"
@@ -38,23 +38,23 @@ pymailtm = 'pymailtm.cli:init'
 
 [tool.poetry.dependencies]
 python = "^3.7"
-requests = "^2.25.1"
+requests = "^2.28.1"
 random-username = "^1.0.2"
 pyperclip = "^1.8.2"
 
 [tool.poetry.dev-dependencies]
-anyio = "^2.2.0"
-yagmail = "^0.14.245"
-pytest = "^6.2.2"
-pytest-cov = "^2.11.1"
-pytest-mock = "^3.5.1"
-pytest-sugar = "^0.9.4"
-pytest-spec = "^3.1.0"
-pytest-timeout = "^1.4.2"
-coveralls = "^3.0.1"
-PyYAML = "^5.4.1"
-pytest-recording = "^0.12.0"
-pytest-vcr-delete-on-fail = "^0.9.0"
+anyio = "^3.6.1"
+yagmail = "^0.15.283"
+pytest = "^7.1.2"
+pytest-cov = "^3.0.0"
+pytest-mock = "^3.8.2"
+pytest-sugar = "^0.9.5"
+pytest-spec = "^3.2.0"
+pytest-timeout = "^2.1.0"
+coveralls = "^3.3.1"
+PyYAML = "^6.0"
+pytest-recording = "^0.12.1"
+pytest-vcr-delete-on-fail = "^2.0.0"
 python-dotenv = "^0.20.0"
 vcrpy-encrypt = "^0.9.1"
 
