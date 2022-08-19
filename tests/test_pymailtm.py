@@ -179,7 +179,7 @@ class TestAMailtmAccount:
         messages = account.get_messages()
         assert len(messages) == 0
 
-    @pytest.mark.timeout(15)
+    @pytest.mark.timeout(20)
     def test_should_return_messages_if_present(self):
         """... it should return messages, if present"""
         account = MailTm().get_account()
@@ -193,7 +193,7 @@ class TestAMailtmAccount:
         assert message.subject == "subject"
         assert message.text == "test"
 
-    @pytest.mark.timeout(15)
+    @pytest.mark.timeout(20)
     def test_should_be_able_to_wait_for_and_return_a_new_message(self):
         """... it should be able to wait for and return a new message"""
         account = MailTm().get_account()
@@ -215,7 +215,7 @@ class TestAMailtmAccount:
         msg = account.wait_for_message()
         assert msg.text == "test"
 
-    @pytest.mark.timeout(15)
+    @pytest.mark.timeout(20)
     def test_should_be_able_to_monitor_new_messages(self, mocker):
         """... it should be able to monitor new messages"""
         account = MailTm().get_account()
@@ -331,18 +331,19 @@ class TestWhenMailtmOpensAnAccount:
         mt._open_account(new=True)
 
 
-class TestTheOpenWebbrowserUtility():
+class TestTheOpenWebbrowserUtility:
     """The open webbrowser utility..."""
 
     def test_should_call_the_webbrowser_library(self, mocker):
         """... it should call the webbrowser library"""
+        # noinspection HttpUrlsUsage
         url = "http://mail.tm"
         mocked_open = mocker.patch("pymailtm.pymailtm.webbrowser.open", new=create_autospec(webbrowser.open))
         open_webbrowser(url)
         mocked_open.assert_called_once_with(url)
 
 
-class TestAMailMessage():
+class TestAMailMessage:
     """A mail message..."""
 
     def test_has_a_method_to_open_itself_in_a_webbrowser(self, mocker):

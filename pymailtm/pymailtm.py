@@ -11,11 +11,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from time import sleep
-from typing import Dict
+from typing import Dict, List
 
 
 class Account:
-    """Representing a temprary mailbox."""
+    """Representing a temporary mailbox."""
 
     def __init__(self, id, address, password):
         self.id_ = id
@@ -35,14 +35,23 @@ class Account:
         """Download a list of messages currently in the account."""
         r = requests.get("{}/messages?page={}".format(self.api_address, page),
                          headers=self.auth_headers)
+        if r.status_code != 200:
+            raise CouldNotGetMessagesException(f"Get message list: HTTP {r.status_code}")
+
         messages = []
         for message_data in r.json()["hydra:member"]:
-            # recover full message
+            sleep(2)
+            # recover the full message
             r = requests.get(
                 f"{self.api_address}/messages/{message_data['id']}", headers=self.auth_headers)
-            text = r.json()["text"]
-            html = r.json()["html"]
-            # prepare the mssage object
+            if r.status_code != 200:
+                raise CouldNotGetMessagesException(f"Get message: HTTP {r.status_code}")
+
+            full_message_json = r.json()
+            text = full_message_json["text"]
+            html = full_message_json["html"]
+
+            # prepare the message object and append it to the list
             messages.append(Message(
                 message_data["id"],
                 message_data["from"],
@@ -52,6 +61,7 @@ class Account:
                 text,
                 html,
                 message_data))
+
         return messages
 
     def delete_account(self):
@@ -62,10 +72,25 @@ class Account:
 
     def wait_for_message(self):
         """Wait for a new message to arrive, then return it."""
-        start = len(self.get_messages())
-        while len(self.get_messages()) == start:
-            sleep(1)
-        return self.get_messages()[0]
+        old_messages_id = self._get_existing_messages_id()
+
+        while True:
+            sleep(2)
+            try:
+                new_messages = list(filter(lambda m: m.id_ not in old_messages_id, self.get_messages()))
+                if new_messages:
+                    return new_messages[0]
+            except CouldNotGetMessagesException:
+                pass
+
+    def _get_existing_messages_id(self) -> List[int]:
+        """Return the existing messages id list. This will keep trying, ignoring errors."""
+        while True:
+            try:
+                old_messages = self.get_messages()
+                return list(map(lambda m: m.id_, old_messages))
+            except CouldNotGetMessagesException:
+                sleep(3)
 
     def monitor_account(self):
         """Keep waiting for new messages and open them in the browser."""
@@ -124,8 +149,12 @@ def open_webbrowser(link: str) -> None:
         os.dup2(saverr, 2)
 
 
+class CouldNotGetMessagesException(Exception):
+    """Raised if a GET on /messages returns with a failed status code."""
+
+
 class CouldNotGetAccountException(Exception):
-    """Raised if a POST on /accounts or /authorization_token return a failed status code."""
+    """Raised if a POST on /accounts or /authorization_token returns with a failed status code."""
 
 
 class InvalidDbAccountException(Exception):
@@ -140,10 +169,13 @@ class MailTm:
     db_file = os.path.join(Path.home(), ".pymailtm")
 
     def _get_domains_list(self):
-        r = requests.get("{}/domains".format(self.api_address))
-        response = r.json()
-        domains = list(map(lambda x: x["domain"], response["hydra:member"]))
-        return domains
+        while True:
+            r = requests.get("{}/domains".format(self.api_address))
+            if r.status_code == 200:
+                response = r.json()
+                domains = list(map(lambda x: x["domain"], response["hydra:member"]))
+                return domains
+            sleep(2)
 
     def get_account(self, password=None):
         """Create and return a new account."""
@@ -172,7 +204,7 @@ class MailTm:
         r = requests.post("{}/{}".format(MailTm.api_address, endpoint),
                           data=json.dumps(account), headers=headers)
         if r.status_code not in [200, 201]:
-            raise CouldNotGetAccountException()
+            raise CouldNotGetAccountException(f"HTTP {r.status_code}")
         return r.json()
 
     def monitor_new_account(self, force_new=False):
