@@ -74,7 +74,7 @@ class Account:
                           data=json.dumps({'seen': True}))
         if r.status_code not in [200, 201]:
             print(r.text)
-            raise CouldNotGetAccountException(f"HTTP {r.status_code}")
+            raise CouldNotGetUpdateMessageException(f"HTTP {r.status_code}")
         return r.json()
 
     def delete_account(self):
@@ -165,6 +165,10 @@ def open_webbrowser(link: str) -> None:
 
 class CouldNotGetMessagesException(Exception):
     """Raised if a GET on /messages returns with a failed status code."""
+
+
+class CouldNotGetUpdateMessageException(Exception):
+    """Raised if a PATCH on /messages returns with a failed status code."""
 
 
 class CouldNotGetAccountException(Exception):
