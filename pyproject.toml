@@ -28,6 +28,11 @@ classifiers = [
   "Intended Audience :: End Users/Desktop",
   "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
   "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Topic :: Communications :: Email",
   "Topic :: Communications :: Email :: Email Clients (MUA)",
   "Topic :: Utilities"
@@ -37,25 +42,25 @@ classifiers = [
 pymailtm = 'pymailtm.cli:init'
 
 [tool.poetry.dependencies]
-python = "^3.7"
-requests = "^2.28.1"
+python = ">=3.8.1,<3.13"
+requests = "^2.32.3"
 random-username = "^1.0.2"
-pyperclip = "^1.8.2"
+pyperclip = "^1.9.0"
 
 [tool.poetry.dev-dependencies]
-anyio = "^3.6.1"
+anyio = "^4.4.0"
 yagmail = "^0.15.283"
-pytest = "^7.1.2"
-pytest-cov = "^3.0.0"
-pytest-mock = "^3.8.2"
-pytest-sugar = "^0.9.5"
+pytest = "^8.2.2"
+pytest-cov = "^5.0.0"
+pytest-mock = "^3.14.0"
+pytest-sugar = "^1.0.0"
 pytest-spec = "^3.2.0"
-pytest-timeout = "^2.1.0"
-coveralls = "^3.3.1"
-PyYAML = "^6.0"
-pytest-recording = "^0.12.1"
-pytest-vcr-delete-on-fail = "^2.0.0"
-python-dotenv = "^0.20.0"
+pytest-timeout = "^2.3.1"
+coveralls = "^4.0.1"
+PyYAML = "^6.0.1"
+pytest-recording = "^0.13.2"
+pytest-vcr-delete-on-fail = "^2.0.1"
+python-dotenv = "^1.0.1"
 vcrpy-encrypt = "^0.9.1"
 
 [build-system]

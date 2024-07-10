@@ -1,4 +1,4 @@
-[![PyPI](https://img.shields.io/pypi/v/pymailtm)](https://pypi.org/project/pymailtm/) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pymailtm)](https://pypi.org/project/pymailtm/) [![CI Status](https://img.shields.io/github/workflow/status/CarloDePieri/pymailtm/prod?logo=github)](https://github.com/CarloDePieri/pymailtm/actions/workflows/prod.yml) [![Coverage Status](https://coveralls.io/repos/github/CarloDePieri/pymailtm/badge.svg?branch=master)](https://coveralls.io/github/CarloDePieri/pymailtm?branch=master) [![Maintenance](https://img.shields.io/maintenance/yes/2022)](https://github.com/CarloDePieri/pymailtm/)
+[![PyPI](https://img.shields.io/pypi/v/pymailtm)](https://pypi.org/project/pymailtm/) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pymailtm)](https://pypi.org/project/pymailtm/) [![CI Status](https://img.shields.io/github/actions/workflow/status/CarloDePieri/pymailtm/prod.yml?branch=master&logo=github)](https://github.com/CarloDePieri/pymailtm/actions/workflows/prod.yml) [![Coverage Status](https://coveralls.io/repos/github/CarloDePieri/pymailtm/badge.svg?branch=master)](https://coveralls.io/github/CarloDePieri/pymailtm?branch=master) [![Maintenance](https://img.shields.io/maintenance/yes/2024)](https://github.com/CarloDePieri/pymailtm/)
 
 This is a command line interface and python web-api wrapper for [mail.tm](https://mail.tm).
 
@@ -77,7 +77,7 @@ cd pymailtm
 inv install
 ```
 
-This will try to create a virtualenv based on `python3.7` and install there all
+This will try to create a virtualenv based on `python3.8` and install there all
 project's dependencies. If a different python version is preferred, it can be
 selected by specifying  the `--python` (`-p`) flag like this:
 

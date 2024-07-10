@@ -1,9 +1,10 @@
 from invoke import task
 
-
 poetry_pypi_testing = "testpypi"
 # Use the minimum python version required by the package
-default_python_bin = "python3.7"
+default_python_bin = "python3.8"
+
+_NOT_GRAPHICAL = " -m 'not graphical'"
 
 
 # If the most currently activated python version is desired, use 'inv install -p latest'
@@ -35,7 +36,7 @@ def build(c):
 
 @task(build)
 def publish_coverage(c):
-    c.run(f"poetry run coveralls")
+    c.run("poetry run coveralls")
 
 
 @task(build)
@@ -55,7 +56,7 @@ def test(c, full=False, s=False, t=False):
     if t:
         marks = " -m 'runthis'"
     elif not full:
-        marks = " -m 'not graphical'"
+        marks = _NOT_GRAPHICAL
     if s:
         capture = " -s"
     c.run(f"poetry run pytest{capture}{marks}", pty=True)
@@ -65,7 +66,7 @@ def test(c, full=False, s=False, t=False):
 def test_spec(c, full=False):
     marks = ""
     if not full:
-        marks = " -m 'not graphical'"
+        marks = _NOT_GRAPHICAL
     c.run(f"poetry run pytest -p no:sugar --spec{marks}", pty=True)
 
 
@@ -80,8 +81,9 @@ def test_cov(c, full=False):
     c.run("mkdir -p coverage")
     marks = ""
     if not full:
-        marks = " -m 'not graphical'"
-    c.run(f"poetry run pytest --cov=pymailtm --cov-report annotate:coverage/cov_annotate --cov-report html:coverage/cov_html{marks}", pty=True)
+        marks = _NOT_GRAPHICAL
+    c.run(f"poetry run pytest --cov=pymailtm --cov-report annotate:coverage/cov_annotate --cov-report "
+          f"html:coverage/cov_html{marks}", pty=True)
 
 
 @task(test_cov)
