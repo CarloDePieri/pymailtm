@@ -1,6 +1,8 @@
-import requests
 from pydantic import BaseModel, Field
 from typing import TypeVar, Generic, List, Callable, Deque
+
+from pymailtm.api.utils import add_query
+from pymailtm.api.connection_manager import ConnectionManager
 
 
 class Mapping(BaseModel):
@@ -47,20 +49,23 @@ class LinkedCollectionIterator(Generic[TC, T]):
     """A generic iterator over a linked collection elements."""
 
     def __init__(
-        self, base_url: str, endpoint: str, collection_factory: Callable[..., TC]
+        self,
+        connection_manager: ConnectionManager,
+        endpoint: str,
+        collection_factory: Callable[..., TC],
     ):
         """
         Initialize the iterator.
 
         Args:
-            base_url (str): The base url of the API.
+            connection_manager (ConnectionManager): The connection manager to use.
             endpoint (str): The endpoint to call.
             collection_factory (Callable[..., TC]): A callable that returns a LinkedCollection.
         """
-        self.factory = collection_factory
-        self.base_url = base_url
+        self.connection_manager = connection_manager
         self.endpoint = endpoint
-        self.current_url = f"{base_url}/{endpoint}?page=1"
+        self.factory = collection_factory
+        self.current_url = add_query(endpoint, {"page": 1})
         self.elements = Deque[T]()
 
     def __iter__(self):
@@ -70,8 +75,7 @@ class LinkedCollectionIterator(Generic[TC, T]):
         if not self.elements:
             if self.current_url:
                 # Fetch the next page
-                response = requests.get(self.current_url)
-                response.raise_for_status()
+                response = self.connection_manager.get(self.current_url)
                 # Create the collection and store the elements
                 collection = self.factory(**response.json())
                 self.elements = Deque[T](collection.hydra_member)
@@ -79,9 +83,7 @@ class LinkedCollectionIterator(Generic[TC, T]):
                 # Update the current_url for the next iteration
                 self.current_url = None
                 if collection.hydra_view and collection.hydra_view.hydra_next:
-                    self.current_url = (
-                        f"{self.base_url}{collection.hydra_view.hydra_next}"
-                    )
+                    self.current_url = f"{collection.hydra_view.hydra_next}"
             else:
                 raise StopIteration
         return self.elements.popleft()

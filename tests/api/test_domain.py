@@ -1,5 +1,7 @@
 import pytest
+from requests import HTTPError
 
+from pymailtm.api.connection_manager import ConnectionManager
 from pymailtm.api.domain import DomainController
 
 BASE_URL = "https://api.mail.tm"
@@ -13,7 +15,8 @@ class TestADomainController:
     @pytest.fixture(scope="class", autouse=True)
     def setup(self, request):
         """TestADomainController setup"""
-        request.cls.domain_controller = DomainController(BASE_URL)
+        connection_manager = ConnectionManager(BASE_URL)
+        request.cls.domain_controller = DomainController(connection_manager)
 
     def test_should_be_able_to_recover_available_domains(self, mock_api, mocks):
         """A domain controller should be able to recover available domains."""
@@ -30,6 +33,15 @@ class TestADomainController:
         # request the domain info
         domain = self.domain_controller.get_domain(mocks.domain.id)
         assert domain == mocks.domain
+
+    def test_should_raise_a_404_on_non_existing_domain(self, mock_api):
+        """A domain controller should raise a 404 on non-existing domain."""
+        domain_id = "not-there"
+        # set up the api mock
+        mock_api.get(f"{BASE_URL}/domains/{domain_id}", status_code=404)
+        # request the domain info
+        with pytest.raises(HTTPError):
+            self.domain_controller.get_domain(domain_id)
 
     def test_should_offer_an_iterator_over_all_domains(self, mock_api, mocks):
         """A domain controller should offer an iterator over all domains."""
