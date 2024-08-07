@@ -4,7 +4,9 @@ import pytest
 import random
 import shutil
 import string
+import binascii
 
+import requests_mock
 import vcr
 import yagmail
 from dotenv import load_dotenv
@@ -12,10 +14,9 @@ from pytest_vcr_delete_on_fail import get_default_cassette_path
 from vcrpy_encrypt import BaseEncryptedPersister
 
 from pymailtm import MailTm
+from mocks_data import MocksData
 
 load_dotenv(".secrets")
-
-import binascii
 
 
 # Define the vcr persister
@@ -40,8 +41,9 @@ def get_clear_text_cassette(item) -> str:
 
 
 # Define a shorthand for the vcr_delete_on_fail marker
-vcr_delete_on_fail = pytest.mark.vcr_delete_on_fail([get_encrypted_cassette,
-                                                     get_clear_text_cassette])
+vcr_delete_on_fail = pytest.mark.vcr_delete_on_fail(
+    [get_encrypted_cassette, get_clear_text_cassette]
+)
 
 
 #
@@ -62,7 +64,7 @@ def vcr_config():
 def backup_config():
     config_file = MailTm.db_file
     letters = string.ascii_letters + string.digits
-    seed = ''.join(random.choice(letters) for i in range(6))
+    seed = "".join(random.choice(letters) for i in range(6))
     backup_file = os.path.join(os.path.expanduser("~"), f".pymailtm.{seed}.bak")
     if os.path.isfile(config_file):
         shutil.copy(config_file, backup_file)
@@ -73,15 +75,26 @@ def backup_config():
 
 
 def send_test_email(to: str) -> None:
-    """ Send an email using gmail credentials specified in the .gmail.json file """
+    """Send an email using gmail credentials specified in the .gmail.json file"""
     if os.path.isfile(".gmail.json"):
         with open(".gmail.json", "r") as f:
             data = json.load(f)
             mail = data["mail"]
             password = data["password"]
     else:
-        print('env')
-        mail = os.environ['GMAIL_ADDR']
-        password = os.environ['GMAIL_PASS']
+        print("env")
+        mail = os.environ["GMAIL_ADDR"]
+        password = os.environ["GMAIL_PASS"]
     yag = yagmail.SMTP(mail, password)
-    yag.send(to, 'subject', 'test')
+    yag.send(to, "subject", "test")
+
+
+@pytest.fixture
+def mock_api():
+    with requests_mock.Mocker() as m:
+        yield m
+
+
+@pytest.fixture
+def mocks():
+    yield MocksData()
