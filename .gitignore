@@ -12,3 +12,6 @@ tests/**/cassettes/**/*.yaml
 /.secrets
 .vscode
 .idea
+
+.secrets.json
+playground.ipynb

@@ -3,6 +3,8 @@ from requests import get, HTTPError, Response
 from urllib.parse import urljoin
 from time import sleep
 
+from pymailtm.api.logger import log
+
 
 # Decorator that handles rate limit. Network calls inside the decorated function will be retried, after a delay,
 # if the response status code is 429
@@ -17,6 +19,7 @@ def rate_limit_handler(func):
                 except HTTPError as e:
                     if e.response.status_code == 429:
                         # If the response status code is 429, wait for 1 second and try again
+                        log(f"Rate limit reached: waiting for {self.rate_limit_delay}s")
                         sleep(self.rate_limit_delay)
                     else:
                         # If the response status code is different from 429, raise the exception
@@ -26,6 +29,15 @@ def rate_limit_handler(func):
             return func(self, *args, **kwargs)
 
     return _decorator
+
+
+def raise_for_status(response: Response):
+    """If the response status code is not 2xx log it and raise an exception."""
+    try:
+        response.raise_for_status()
+    except HTTPError as e:
+        log(f"HTTP error: {e}")
+        raise e
 
 
 class ConnectionManager:
@@ -45,5 +57,6 @@ class ConnectionManager:
     def get(self, endpoint: str) -> Response:
         """Perform a GET request to the specified endpoint."""
         response = get(urljoin(self.base_url, endpoint))
-        response.raise_for_status()
+        raise_for_status(response)
+        log(f"HTTP GET {endpoint} -> {response.status_code}: {response.json()}")
         return response
