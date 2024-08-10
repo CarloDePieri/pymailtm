@@ -4,10 +4,13 @@ from pymailtm.api.credentials import Credentials
 
 
 class Token(BaseModel):
+    """The token model."""
+
     token: str
 
 
 class AuthController:
+    """Class used to authenticate users. It exchanges credentials for a token that can be used for authenticated operations."""
 
     endpoint = "token"
 
@@ -15,5 +18,6 @@ class AuthController:
         self.connection_manager = connection_manager
 
     def authenticate(self, credentials: Credentials) -> Token:
+        """Authenticate a user and return the token."""
         response = self.connection_manager.post(self.endpoint, credentials.model_dump())
         return Token(**response.json())

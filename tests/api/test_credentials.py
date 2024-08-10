@@ -2,7 +2,7 @@ import pytest
 
 from conftest import BASE_URL
 
-from pymailtm.api.credentials import CredentialsManager
+from pymailtm.api.credentials import CredentialsController
 from pymailtm.api.connection_manager import ConnectionManager
 from pymailtm.api.domain import DomainController
 from pymailtm.api.utils import MailTmAPIException
@@ -11,13 +11,13 @@ from pymailtm.api.utils import MailTmAPIException
 class TestACredentialsController:
     """Test: A Credentials Controller..."""
 
-    cm: CredentialsManager
+    cm: CredentialsController
 
     @pytest.fixture(scope="class", autouse=True)
     def setup(self, request):
         """TestACredentialsController setup"""
         domain_controller = DomainController(ConnectionManager(BASE_URL))
-        request.cls.cm = CredentialsManager(domain_controller)
+        request.cls.cm = CredentialsController(domain_controller)
 
     def test_should_be_able_to_create_a_set_of_credentials(self, mock_api, mocks):
         """A credentials controller should be able to create a set of credentials."""
