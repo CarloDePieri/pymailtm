@@ -1,7 +1,8 @@
 from __future__ import annotations
-from requests import get, HTTPError, Response
+from requests import get, post, HTTPError, Response
 from urllib.parse import urljoin
 from time import sleep
+import json
 
 from pymailtm.api.logger import log
 
@@ -52,11 +53,27 @@ class ConnectionManager:
         self.base_url = base_url
         self.handle_rate_limit = handle_rate_limit
         self.rate_limit_delay = rate_limit_delay
+        self.headers = {
+            "accept": "application/ld+json",
+            "Content-Type": "application/json",
+        }
 
     @rate_limit_handler
     def get(self, endpoint: str) -> Response:
         """Perform a GET request to the specified endpoint."""
-        response = get(urljoin(self.base_url, endpoint))
+        response = get(urljoin(self.base_url, endpoint), headers=self.headers)
         raise_for_status(response)
         log(f"HTTP GET {endpoint} -> {response.status_code}: {response.json()}")
+        return response
+
+    @rate_limit_handler
+    def post(self, endpoint, data: dict) -> Response:
+        """Perform a POST request to the specified endpoint."""
+        response = post(
+            urljoin(self.base_url, endpoint),
+            data=json.dumps(data),
+            headers=self.headers,
+        )
+        raise_for_status(response)
+        log(f"HTTP POST {endpoint} -> {response.status_code}: {response.json()}")
         return response

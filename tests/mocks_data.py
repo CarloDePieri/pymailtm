@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from typing import List
 
 from pymailtm.api.domain import Domain
+from pymailtm.api.account import Account
+from pymailtm.api.auth import Token
 
 
 @dataclass
@@ -19,6 +21,24 @@ class MocksData:
     json_domains: dict
     json_domains_pages: List[dict]
     domain: Domain
+    json_account = {
+        "address": "a8a78e47bc32496aa345b6501aebfda0@dummymailtmdomain.com",
+        "createdAt": "2024-08-09T19:27:24+00:00",
+        "id": "66b66d9cfdf11bf4bf13e676",
+        "isDeleted": False,
+        "isDisabled": False,
+        "quota": 40000000,
+        "updatedAt": "2024-08-09T19:27:24+00:00",
+        "used": 0,
+    }
+    json_token = {"token": "dummy_token"}
+    json_empty_domains = {
+        "@context": "/contexts/Domain",
+        "@id": "/domains",
+        "@type": "hydra:Collection",
+        "hydra:member": [],
+        "hydra:totalItems": 0,
+    }
 
     def __init__(self):
         self.json_domains = {
@@ -52,3 +72,5 @@ class MocksData:
         }
         self.json_domains_pages = [domains_page_1, domains_page_2]
         self.domain = Domain(**self.json_domain)
+        self.account = Account(**self.json_account)
+        self.token = Token(**self.json_token)
