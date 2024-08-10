@@ -1,4 +1,4 @@
-from api.utils import join_path, add_query
+from pymailtm.api.utils import join_path, add_query
 
 
 class TestTheUtilsModule:
