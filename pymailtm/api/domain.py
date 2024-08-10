@@ -29,9 +29,10 @@ class Domains(LinkedCollection[Domain]):
 class DomainController:
     """Class used to interact with the domain API."""
 
+    endpoint = "domains"
+
     def __init__(self, connection_manager: ConnectionManager):
         self.connection_manager = connection_manager
-        self.endpoint = "domains"
 
     @property
     def domains(self) -> Iterator[Domain]:

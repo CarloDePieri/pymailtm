@@ -1,11 +1,15 @@
+from __future__ import annotations
 import json
 import os
+from typing import TypeVar, Callable, TYPE_CHECKING
+
 import pytest
 import random
 import shutil
 import string
 import binascii
 
+import requests
 import requests_mock
 import vcr
 import yagmail
@@ -13,7 +17,11 @@ from dotenv import load_dotenv
 from pytest_vcr_delete_on_fail import get_default_cassette_path
 from vcrpy_encrypt import BaseEncryptedPersister
 
+if TYPE_CHECKING:
+    from requests_mock import Context
+
 from pymailtm import MailTm
+from pymailtm.api.auth import Token
 from mocks_data import MocksData
 
 load_dotenv(".secrets")
@@ -98,6 +106,32 @@ def mock_api():
 @pytest.fixture
 def mocks():
     yield MocksData()
+
+
+T = TypeVar("T")
+
+
+@pytest.fixture
+def auth_response_callback():
+    """Provide a callback that if authenticated with the right Token, will return the provided response."""
+
+    def wrapper(
+        token: Token, response: T, status_code: int = 200
+    ) -> Callable[[requests.Request, Context], T]:
+        def callback(request: requests.Request, context: Context) -> T:
+            if (
+                "Authorization" in request.headers
+                and request.headers["Authorization"] == f"Bearer {token.token}"
+            ):
+                context.status_code = status_code
+                return response
+            else:
+                context.status_code = 401
+                return "Unauthorized"
+
+        return callback
+
+    yield wrapper
 
 
 BASE_URL = "https://api.mail.tm"

@@ -1,8 +1,13 @@
 from __future__ import annotations
-from requests import get, post, HTTPError, Response
+from requests import get, post, HTTPError, Response, delete
 from urllib.parse import urljoin
 from time import sleep
 import json
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pymailtm.api.auth import Token
 
 from pymailtm.api.logger import log
 
@@ -59,9 +64,12 @@ class ConnectionManager:
         }
 
     @rate_limit_handler
-    def get(self, endpoint: str) -> Response:
-        """Perform a GET request to the specified endpoint."""
-        response = get(urljoin(self.base_url, endpoint), headers=self.headers)
+    def get(self, endpoint: str, token: Token = None) -> Response:
+        """Perform a GET request to the specified endpoint. If a token is provided, it will be used for authentication."""
+        headers = self.headers.copy()
+        if token:
+            headers["Authorization"] = f"Bearer {token.token}"
+        response = get(urljoin(self.base_url, endpoint), headers=headers)
         raise_for_status(response)
         log(f"HTTP GET {endpoint} -> {response.status_code}: {response.json()}")
         return response
@@ -76,4 +84,14 @@ class ConnectionManager:
         )
         raise_for_status(response)
         log(f"HTTP POST {endpoint} -> {response.status_code}: {response.json()}")
+        return response
+
+    @rate_limit_handler
+    def delete(self, endpoint: str, token: Token) -> Response:
+        """Perform an authenticated DELETE request to the specified endpoint."""
+        headers = self.headers.copy()
+        headers["Authorization"] = f"Bearer {token.token}"
+        response = delete(urljoin(self.base_url, endpoint), headers=headers)
+        raise_for_status(response)
+        log(f"HTTP DELETE {endpoint} -> {response.status_code}")
         return response

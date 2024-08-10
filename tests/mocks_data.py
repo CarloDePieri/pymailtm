@@ -12,7 +12,7 @@ class MocksData:
         "@id": "/domains/668dc8d8fc74993d22410001",
         "@type": "Domain",
         "createdAt": "2024-07-09T00:00:00+00:00",
-        "domain": "dummymailtmdomain.com",
+        "domain": "domain.example",
         "id": "668dc8d8fc74993d22410001",
         "isActive": True,
         "isPrivate": False,
@@ -21,8 +21,8 @@ class MocksData:
     json_domains: dict
     json_domains_pages: List[dict]
     domain: Domain
-    json_account = {
-        "address": "a8a78e47bc32496aa345b6501aebfda0@dummymailtmdomain.com",
+    json_new_account = {
+        "address": "a8a78e47bc32496aa345b6501aebfda0@domain.example",
         "createdAt": "2024-08-09T19:27:24+00:00",
         "id": "66b66d9cfdf11bf4bf13e676",
         "isDeleted": False,
@@ -72,5 +72,17 @@ class MocksData:
         }
         self.json_domains_pages = [domains_page_1, domains_page_2]
         self.domain = Domain(**self.json_domain)
-        self.account = Account(**self.json_account)
+        self.account = Account(**self.json_new_account)
         self.token = Token(**self.json_token)
+        self.json_me = {
+            **self.json_new_account,
+            **{
+                "@context": "/contexts/Account",
+                "@id": "/me",
+                "@type": "Account",
+            },
+        }
+        self.json_account = {
+            **self.json_me,
+            **{"@id": "/accounts/66b66d9cfdf11bf4bf13e676"},
+        }
