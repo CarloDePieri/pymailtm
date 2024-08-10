@@ -1,4 +1,4 @@
-from typing import List, Optional, Iterator
+from typing import Optional, Iterator
 
 from pydantic import BaseModel
 
@@ -45,18 +45,15 @@ class DomainController:
     def get_count(self) -> int:
         """Return the total number of available domains."""
         log("Domains count requested")
-        response = self.connection_manager.get("domains")
-        if response.status_code == 200:
-            return Domains(**response.json()).hydra_totalItems
-        return 0
+        return self.get_domains_page().hydra_totalItems
 
-    def get_domains_page(self, page=1) -> List[Domain]:
+    def get_domains_page(self, page=1) -> Optional[Domains]:
         """Return the domains listed in a specific api response page."""
         log(f"Domains page requested: {page}")
         response = self.connection_manager.get(add_query(self.endpoint, {"page": page}))
         if response.status_code == 200:
-            return Domains(**response.json()).hydra_member
-        return []
+            return Domains(**response.json())
+        return None
 
     def get_domain(self, domain_id: str) -> Optional[Domain]:
         """Return a specific domain info."""
@@ -70,6 +67,6 @@ class DomainController:
         """Return a valid domain."""
         log("Domain requested")
         domains = self.get_domains_page()
-        if domains:
-            return domains[0]
+        if domains.hydra_member:
+            return domains.hydra_member[0]
         return None

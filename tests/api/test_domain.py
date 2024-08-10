@@ -23,7 +23,8 @@ class TestADomainController:
         mock_api.get(f"{BASE_URL}/domains", json=mocks.json_domains)
         # request the domains list
         domains = self.domain_controller.get_domains_page()
-        assert domains == [mocks.domain]
+        assert domains.hydra_member == [mocks.domain]
+        assert domains.hydra_totalItems == 1
 
     def test_should_be_able_to_get_a_domain_info(self, mock_api, mocks):
         """A domain controller should be able to get a domain info."""
