@@ -49,7 +49,7 @@ class DomainController:
             return Domains(**response.json()).hydra_totalItems
         return 0
 
-    def get_page(self, page=1) -> List[Domain]:
+    def get_domains_page(self, page=1) -> List[Domain]:
         """Return the domains listed in a specific api response page."""
         log(f"Domains page requested: {page}")
         response = self.connection_manager.get(add_query(self.endpoint, {"page": page}))
@@ -63,4 +63,12 @@ class DomainController:
         response = self.connection_manager.get(join_path(self.endpoint, domain_id))
         if response.status_code == 200:
             return Domain(**response.json())
+        return None
+
+    def get_a_domain(self) -> Optional[Domain]:
+        """Return a valid domain."""
+        log("Domain requested")
+        domains = self.get_domains_page()
+        if domains:
+            return domains[0]
         return None

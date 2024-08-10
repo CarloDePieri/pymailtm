@@ -98,3 +98,6 @@ def mock_api():
 @pytest.fixture
 def mocks():
     yield MocksData()
+
+
+BASE_URL = "https://api.mail.tm"

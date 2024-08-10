@@ -1,10 +1,9 @@
 import pytest
 from requests import HTTPError
 
+from conftest import BASE_URL
 from pymailtm.api.connection_manager import ConnectionManager
 from pymailtm.api.domain import DomainController
-
-BASE_URL = "https://api.mail.tm"
 
 
 class TestADomainController:
@@ -23,7 +22,7 @@ class TestADomainController:
         # set up the api mock
         mock_api.get(f"{BASE_URL}/domains", json=mocks.json_domains)
         # request the domains list
-        domains = self.domain_controller.get_page()
+        domains = self.domain_controller.get_domains_page()
         assert domains == [mocks.domain]
 
     def test_should_be_able_to_get_a_domain_info(self, mock_api, mocks):
@@ -70,3 +69,12 @@ class TestADomainController:
         # recover the domains count
         count = self.domain_controller.get_count()
         assert count == 4
+
+    def test_should_have_a_dedicated_method_to_get_a_valid_domain(
+        self, mock_api, mocks
+    ):
+        """A domain controller should have a dedicated method to get a valid domain."""
+        # set up the api mock
+        mock_api.get(f"{BASE_URL}/domains?page=1", json=mocks.json_domains)
+        domain = self.domain_controller.get_a_domain()
+        assert domain == mocks.domain
