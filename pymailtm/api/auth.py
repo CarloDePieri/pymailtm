@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+from pymailtm.api.logger import log
 from pymailtm.api.credentials import Credentials
 
 
@@ -19,5 +20,6 @@ class AuthController:
 
     def authenticate(self, credentials: Credentials) -> Token:
         """Authenticate a user and return the token."""
+        log("Authentication token requested")
         response = self.connection_manager.post(self.endpoint, credentials.model_dump())
         return Token(**response.json())

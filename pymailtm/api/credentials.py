@@ -5,6 +5,7 @@ from random import choice
 from pydantic import BaseModel
 from random_username.generate import generate_username
 
+from pymailtm.api.logger import log
 from pymailtm.api.domain import DomainController
 from pymailtm.api.utils import MailTmAPIException
 
@@ -38,6 +39,7 @@ class CredentialsController:
 
     def generate_address(self, username: str = None) -> str:
         """Generate a new address. If username is provided, it will be used to generate the address."""
+        log("Address generation requested")
         if not username:
             username = self.generate_username()
         domain = self.domain_controller.get_a_domain()

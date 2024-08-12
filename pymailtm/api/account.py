@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+from pymailtm.api.logger import log
 from pymailtm.api.auth import Token
 from pymailtm.api.utils import join_path
 from pymailtm.api.credentials import Credentials
@@ -30,6 +31,7 @@ class AccountController:
 
     def create_account(self, credentials: Credentials) -> Account:
         """Create a new account using the given credentials."""
+        log("Account creation requested")
         response = self.connection_manager.post(
             self.endpoint,
             credentials.model_dump(),
@@ -38,6 +40,7 @@ class AccountController:
 
     def get_account_by_id(self, account_id: str, token: Token) -> Account:
         """Get an account by its id."""
+        log(f"Account info requested: {account_id}")
         response = self.connection_manager.get(
             join_path(self.endpoint, account_id), token=token
         )
@@ -45,11 +48,13 @@ class AccountController:
 
     def get_me(self, token: Token) -> Account:
         """Get the account associated with the token."""
+        log("Me info requested")
         response = self.connection_manager.get(self.endpoint_me, token=token)
         return Account(**response.json())
 
     def delete_account(self, account_id: str, token: Token) -> bool:
         """Delete an account by its id."""
+        log(f"Account deletion requested: {account_id}")
         response = self.connection_manager.delete(
             join_path(self.endpoint, account_id), token=token
         )
