@@ -1,6 +1,7 @@
 from __future__ import annotations
 import json
 import os
+from pathlib import Path
 from typing import TypeVar, Callable, TYPE_CHECKING
 
 import pytest
@@ -94,7 +95,9 @@ def send_test_email(to: str) -> None:
         mail = os.environ["GMAIL_ADDR"]
         password = os.environ["GMAIL_PASS"]
     yag = yagmail.SMTP(mail, password)
-    yag.send(to, "subject", "test")
+    yag.send(
+        to, "subject", "test", attachments=[Path("tests/test-image.svg").absolute()]
+    )
 
 
 @pytest.fixture
