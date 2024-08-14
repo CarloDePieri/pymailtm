@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from pymailtm.api.message import Attachment, Message, MessageInfo
+from pymailtm.api.message import Attachment, MessageIntro, Message
 from pymailtm.api.domain import Domain
 from pymailtm.api.account import Account
 from pymailtm.api.auth import Token
@@ -12,8 +12,8 @@ class MocksData:
     account: Account
     token: Token
     attachment = Attachment
-    message = Message
-    message_info = MessageInfo
+    message_intro = MessageIntro
+    message_info = Message
 
     username = "a8a78e47bc32496aa345b6501aebfda0"
     domain_name = "domain.example"
@@ -188,5 +188,5 @@ class MocksData:
         self.account = Account(**self.json_new_account)
         self.token = Token(**self.json_token)
         self.attachment = Attachment(**self.json_attachment)
-        self.message = Message(**self.json_message)
-        self.message_info = MessageInfo(**self.json_message_info)
+        self.message_intro = MessageIntro(**self.json_message)
+        self.message_info = Message(**self.json_message_info)

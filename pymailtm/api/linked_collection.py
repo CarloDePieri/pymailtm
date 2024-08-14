@@ -1,6 +1,9 @@
+from __future__ import annotations
 from pydantic import BaseModel, Field
-from typing import TypeVar, Generic, List, Callable, Deque
+from typing import TypeVar, Generic, List, Callable, Deque, TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from pymailtm.api.auth import Token
 from pymailtm.api.utils import add_query
 from pymailtm.api.connection_manager import ConnectionManager
 
@@ -53,6 +56,7 @@ class LinkedCollectionIterator(Generic[TC, T]):
         connection_manager: ConnectionManager,
         endpoint: str,
         collection_factory: Callable[..., TC],
+        token: Token = None,
     ):
         """
         Initialize the iterator.
@@ -61,12 +65,14 @@ class LinkedCollectionIterator(Generic[TC, T]):
             connection_manager (ConnectionManager): The connection manager to use.
             endpoint (str): The endpoint to call.
             collection_factory (Callable[..., TC]): A callable that returns a LinkedCollection.
+            token (Optional[Token]): The token to use for authentication.
         """
         self.connection_manager = connection_manager
         self.endpoint = endpoint
         self.factory = collection_factory
         self.current_url = add_query(endpoint, {"page": 1})
         self.elements = Deque[T]()
+        self.token = token
 
     def __iter__(self):
         return self
@@ -75,7 +81,9 @@ class LinkedCollectionIterator(Generic[TC, T]):
         if not self.elements:
             if self.current_url:
                 # Fetch the next page
-                response = self.connection_manager.get(self.current_url)
+                response = self.connection_manager.get(
+                    self.current_url, token=self.token
+                )
                 # Create the collection and store the elements
                 collection = self.factory(**response.json())
                 self.elements = Deque[T](collection.hydra_member)
