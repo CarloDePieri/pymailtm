@@ -71,7 +71,11 @@ class ConnectionManager:
             headers["Authorization"] = f"Bearer {token.token}"
         response = get(urljoin(self.base_url, endpoint), headers=headers)
         raise_for_status(response)
-        log(f"HTTP GET {endpoint} -> {response.status_code}: {response.json()}")
+        content_type = response.headers.get("Content-Type")
+        if content_type == "application/json" or content_type == "application/ld+json":
+            log(f"HTTP GET {endpoint} -> {response.status_code}: {response.json()}")
+        else:
+            log(f"HTTP GET {endpoint} -> {response.status_code}: {response.text}")
         return response
 
     @rate_limit_handler

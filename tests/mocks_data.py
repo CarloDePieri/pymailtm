@@ -13,7 +13,7 @@ class MocksData:
     token: Token
     attachment = Attachment
     message_intro = MessageIntro
-    message_info = Message
+    message = Message
 
     username = "a8a78e47bc32496aa345b6501aebfda0"
     domain_name = "domain.example"
@@ -77,8 +77,9 @@ class MocksData:
         "hydra:member": [],
         "hydra:totalItems": 0,
     }
-    json_message = {
-        "id": "66b9d17cf26da89c18382e2c",
+    message_id = "66b9d17cf26da89c18382e2c"
+    json_message_intro = {
+        "id": ("%s" % message_id),
         "msgid": "<96ff6d36ae6646cd655be56d6a75f605@yagmail>",
         "from": {"address": f"test_sender@{domain_name}", "name": ""},
         "to": [{"address": f"{username}@{domain_name}", "name": ""}],
@@ -88,22 +89,22 @@ class MocksData:
         "isDeleted": False,
         "hasAttachments": False,
         "size": 3901,
-        "downloadUrl": "/messages/66b9d17cf26da89c18382e2c/download",
-        "sourceUrl": "/sources/66b9d17cf26da89c18382e2c",
+        "downloadUrl": ("/messages/%s/download" % message_id),
+        "sourceUrl": ("/sources/%s" % message_id),
         "createdAt": "2024-08-12T09:10:18+00:00",
         "updatedAt": "2024-08-12T09:10:20+00:00",
         "accountId": f"/accounts/{account_id}",
     }
-    json_messages = {
+    json_message_intros = {
         "@id": "/messages",
         "@type": "hydra:Collection",
         "hydra:totalItems": 1,
-        "hydra:member": [json_message],
+        "hydra:member": [json_message_intro],
     }
-    json_messages_page_1 = {
+    json_message_intros_page_1 = {
         "@id": "/messages?page=1",
         "@type": "hydra:PartialCollectionView",
-        "hydra:member": [json_message, json_message, json_message],
+        "hydra:member": [json_message_intro, json_message_intro, json_message_intro],
         "hydra:totalItems": 4,
         "hydra:view": {
             "hydra:first": "/messages?page=1",
@@ -111,10 +112,10 @@ class MocksData:
             "hydra:next": "/messages?page=2",
         },
     }
-    json_messages_page_2 = {
+    json_message_intros_page_2 = {
         "@id": "/messages?page=2",
         "@type": "hydra:PartialCollectionView",
-        "hydra:member": [json_message],
+        "hydra:member": [json_message_intro],
         "hydra:totalItems": 4,
         "hydra:view": {
             "hydra:first": "/messages?page=1",
@@ -122,7 +123,7 @@ class MocksData:
             "hydra:previous": "/messages?page=1",
         },
     }
-    json_messages_pages = [json_messages_page_1, json_messages_page_2]
+    json_message_intros_pages = [json_message_intros_page_1, json_message_intros_page_2]
     json_attachment = {
         "id": "ATTACH000001",
         "filename": "test-image.svg",
@@ -131,13 +132,13 @@ class MocksData:
         "transferEncoding": "base64",
         "related": False,
         "size": 1,
-        "downloadUrl": "/messages/66b9d17cf26da89c18382e2c/attachment/ATTACH000001",
+        "downloadUrl": ("/messages/%s/attachment/ATTACH000001" % message_id),
     }
-    json_message_info = {
+    json_message = {
         "@context": "/contexts/Message",
-        "@id": "/messages/66b9d17cf26da89c18382e2c",
+        "@id": ("/messages/%s" % message_id),
         "@type": "Message",
-        "id": "66b9d17cf26da89c18382e2c",
+        "id": ("%s" % message_id),
         "msgid": "<96ff6d36ae6646cd655be56d6a75f605@yagmail>",
         "from": {"address": f"test_sender@{domain_name}", "name": ""},
         "to": [{"address": f"{username}@{domain_name}", "name": ""}],
@@ -164,8 +165,8 @@ class MocksData:
         "hasAttachments": True,
         "attachments": [json_attachment],
         "size": 5414,
-        "downloadUrl": "/messages/66b9d17cf26da89c18382e2c/download",
-        "sourceUrl": "/sources/66b9d17cf26da89c18382e2c",
+        "downloadUrl": ("/messages/%s/download" % message_id),
+        "sourceUrl": ("/sources/%s" % message_id),
         "createdAt": "2024-08-12T09:10:18+00:00",
         "updatedAt": "2024-08-12T09:10:20+00:00",
         "accountId": f"/accounts/{account_id}",
@@ -182,11 +183,17 @@ class MocksData:
         **json_me,
         **{"@id": f"/accounts/{account_id}"},
     }
+    message_resource = "A full message/rfc822 string.\r\n"
+    json_message_source = {
+        "id": message_id,
+        "downloadUrl": f"/messages/{message_id}/download",
+        "data": message_resource,
+    }
 
     def __init__(self):
         self.domain = Domain(**self.json_domain)
         self.account = Account(**self.json_new_account)
         self.token = Token(**self.json_token)
         self.attachment = Attachment(**self.json_attachment)
-        self.message_intro = MessageIntro(**self.json_message)
-        self.message_info = Message(**self.json_message_info)
+        self.message_intro = MessageIntro(**self.json_message_intro)
+        self.message = Message(**self.json_message)

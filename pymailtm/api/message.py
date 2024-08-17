@@ -93,33 +93,59 @@ class MessageController:
 
     @property
     def message_intros(self) -> Iterator[MessageIntro]:
-        """Return a list of all message intros, taking case of pagination."""
-        log("Messages iterator requested")
+        """Return an iterator of all message intros, taking care of pagination."""
+        log("Message intros iterator requested")
         return LinkedCollectionIterator[MessageIntros, MessageIntro](
             self.connection_manager, self.endpoint, MessageIntros, self.token
         )
 
-    def get_message_intros_page(self, page: int = 1) -> Optional[MessageIntros]:
+    @property
+    def messages(self) -> Iterator[Message]:
+        """Return an iterator of all messages, taking care of pagination.
+
+        This is a convenience method that fetches the full message for each message intro, but it's heavy on the API
+        and will probably incur in rate limiting when downloading multiple messages."""
+        log("Messages iterator requested")
+        return map(lambda m: self.get_message(m.id), self.message_intros)
+
+    def get_message_intros_page(self, page: int = 1) -> MessageIntros:
         """Return the message intros listed in a specific api response page."""
         log(f"Messages page requested: {page}")
         response = self.connection_manager.get(
             add_query(self.endpoint, {"page": page}), token=self.token
         )
-        if response.status_code == 200:
-            return MessageIntros(**response.json())
-        return None
+        return MessageIntros(**response.json())
 
     def get_count(self) -> int:
         """Return the total number of available messages."""
         log("Messages count requested")
         return self.get_message_intros_page().hydra_totalItems
 
-    def get_message(self, message_id: str) -> Optional[Message]:
+    def get_message(self, message_id: str) -> Message:
         """Return the full message using the given id."""
         log(f"Full message requested: {message_id}")
         response = self.connection_manager.get(
             join_path(self.endpoint, message_id), token=self.token
         )
-        if response.status_code == 200:
-            return Message(**response.json())
-        return None
+        return Message(**response.json())
+
+    def delete_message(self, message_id: str) -> bool:
+        """Delete a message by its id."""
+        log(f"Message deletion requested: {message_id}")
+        response = self.connection_manager.delete(
+            join_path(self.endpoint, message_id), token=self.token
+        )
+        if response.status_code == 204:
+            return True
+        return False
+
+    def download_message_source(self, message_id: str) -> str:
+        """Download the full message as a 'message/rfc822' string.
+
+        NOTE: this method returns the same content as SourceController.get_source().data.
+        """
+        log(f"Message download requested: {message_id}")
+        response = self.connection_manager.get(
+            join_path(self.endpoint, message_id, "download"), token=self.token
+        )
+        return response.text
