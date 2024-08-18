@@ -2,6 +2,7 @@ from gc import callbacks
 from typing import Callable
 
 import pytest
+from requests import Request
 
 from pymailtm.api.auth import Token
 from pymailtm.api.connection_manager import ConnectionManager
@@ -144,3 +145,20 @@ class TestAMessageController:
             mocks.message_intro.id
         )
         assert resource == mocks.message_resource
+
+    def test_should_be_able_to_mark_a_message_as_seen(
+        self, mock_api, mocks, auth_response_callback
+    ):
+        """A message controller should be able to mark a message as seen."""
+
+        def callback(request: Request, _):
+            assert request.headers["Content-Type"] == "application/merge-patch+json"
+            assert request.json() == {"seen": True}
+            return ""
+
+        mock_api.patch(
+            f"{BASE_URL}/messages/{mocks.message_intro.id}",
+            json=auth_response_callback(mocks.token, callback, status_code=200),
+        )
+        self.get_controller(mocks.token).mark_message_as_seen(mocks.message_intro.id)
+        assert mock_api.called

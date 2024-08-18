@@ -127,6 +127,8 @@ def auth_response_callback():
                 and request.headers["Authorization"] == f"Bearer {token.token}"
             ):
                 context.status_code = status_code
+                if isinstance(response, Callable):
+                    return response(request, context)
                 return response
             else:
                 context.status_code = 401

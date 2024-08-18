@@ -149,3 +149,10 @@ class MessageController:
             join_path(self.endpoint, message_id, "download"), token=self.token
         )
         return response.text
+
+    def mark_message_as_seen(self, message_id: str) -> None:
+        """Mark a message as seen."""
+        log(f"Message 'mark as seen' requested: {message_id}")
+        self.connection_manager.patch(
+            join_path(self.endpoint, message_id), {"seen": True}, token=self.token
+        )

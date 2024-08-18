@@ -1,10 +1,10 @@
 from __future__ import annotations
-from requests import get, post, HTTPError, Response, delete
+from requests import get, post, HTTPError, Response, delete, patch
 from urllib.parse import urljoin
 from time import sleep
 import json
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, Optional
 
 if TYPE_CHECKING:
     from pymailtm.api.auth import Token
@@ -59,27 +59,21 @@ class ConnectionManager:
         self.handle_rate_limit = handle_rate_limit
         self.rate_limit_delay = rate_limit_delay
         self.headers = {
-            "accept": "application/ld+json",
+            "Accept": "application/ld+json",
             "Content-Type": "application/json",
         }
 
     @rate_limit_handler
-    def get(self, endpoint: str, token: Token = None) -> Response:
+    def get(self, endpoint: str, token: Optional[Token] = None) -> Response:
         """Perform a GET request to the specified endpoint. If a token is provided, it will be used for authentication."""
-        headers = self.headers.copy()
-        if token:
-            headers["Authorization"] = f"Bearer {token.token}"
+        headers = self._get_authenticated_headers(token)
         response = get(urljoin(self.base_url, endpoint), headers=headers)
         raise_for_status(response)
-        content_type = response.headers.get("Content-Type")
-        if content_type == "application/json" or content_type == "application/ld+json":
-            log(f"HTTP GET {endpoint} -> {response.status_code}: {response.json()}")
-        else:
-            log(f"HTTP GET {endpoint} -> {response.status_code}: {response.text}")
+        self._log("GET", endpoint, response)
         return response
 
     @rate_limit_handler
-    def post(self, endpoint, data: dict) -> Response:
+    def post(self, endpoint, data: Dict) -> Response:
         """Perform a POST request to the specified endpoint."""
         response = post(
             urljoin(self.base_url, endpoint),
@@ -87,15 +81,49 @@ class ConnectionManager:
             headers=self.headers,
         )
         raise_for_status(response)
-        log(f"HTTP POST {endpoint} -> {response.status_code}: {response.json()}")
+        self._log("POST", endpoint, response)
         return response
 
     @rate_limit_handler
     def delete(self, endpoint: str, token: Token) -> Response:
         """Perform an authenticated DELETE request to the specified endpoint."""
-        headers = self.headers.copy()
-        headers["Authorization"] = f"Bearer {token.token}"
+        headers = self._get_authenticated_headers(token)
         response = delete(urljoin(self.base_url, endpoint), headers=headers)
         raise_for_status(response)
-        log(f"HTTP DELETE {endpoint} -> {response.status_code}")
+        self._log("DELETE", endpoint, response)
         return response
+
+    @rate_limit_handler
+    def patch(self, endpoint: str, data: Dict, token: Token) -> Response:
+        """Perform an authenticated PATCH request to the specified endpoint."""
+        headers = self._get_authenticated_headers(token)
+        headers["Content-Type"] = "application/merge-patch+json"
+        response = patch(
+            urljoin(self.base_url, endpoint),
+            data=json.dumps(data),
+            headers=headers,
+        )
+        raise_for_status(response)
+        self._log("PATCH", endpoint, response)
+        return response
+
+    @staticmethod
+    def _log(method: str, endpoint: str, response: Response) -> None:
+        """Log the request method, endpoint and response status code."""
+        if (
+            response.headers.get("Content-Type") == "application/json"
+            or response.headers.get("Content-Type") == "application/ld+json"
+        ):
+            data = response.json()
+        else:
+            data = response.text
+        log(f"HTTP {method} {endpoint} -> {response.status_code}: {data}")
+
+    def _get_authenticated_headers(
+        self, token: Optional[Token] = None
+    ) -> Dict[str, str]:
+        """Return the headers with the authentication token if it's provided."""
+        headers = self.headers.copy()
+        if token:
+            headers["Authorization"] = f"Bearer {token.token}"
+        return headers
