@@ -67,7 +67,7 @@ class Account:
 
     def mark_seen_message(self, message_id):
         headers = self.auth_headers
-        headers["Content-Type"] = "application/ld+json";
+        headers["Content-Type"] = "application/merge-patch+json";
 
         r = requests.patch(
                 f"{self.api_address}/messages/{message_id}", headers=headers,
