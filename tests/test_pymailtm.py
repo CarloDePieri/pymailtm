@@ -350,7 +350,7 @@ class TestAMailMessage:
         """... it has a method to open itself in a webbrowser"""
         mocked_web = mocker.patch("pymailtm.pymailtm.webbrowser.open", new=create_autospec(webbrowser.open))
 
-        m = Message("fake_id", {}, {}, "subject", "intro", "text", "body", {})
+        m = Message("fake_id", {}, {}, "subject", "intro", "text", "body", False, {})
         m.open_web()
 
         mocked_web.assert_called()
