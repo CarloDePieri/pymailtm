@@ -1,6 +1,7 @@
-from typing import List, Iterator
+from typing import List, Iterator, Union, Literal
 
 from pydantic import BaseModel, Field
+from requests import Response
 
 from pymailtm.api.utils import join_path
 from pymailtm.api.connection_manager import ConnectionManager
@@ -23,7 +24,7 @@ class Attachment(BaseModel):
     id: str
     filename: str
     contentType: str
-    disposition: bool
+    disposition: Union[Literal["attachment"], bool]
     transferEncoding: str
     related: bool
     size: int
@@ -155,4 +156,12 @@ class MessageController:
         log(f"Message 'mark as seen' requested: {message_id}")
         self.connection_manager.patch(
             join_path(self.endpoint, message_id), {"seen": True}, token=self.token
+        )
+
+    def download_attachment(self, message_id: str, attachment_id: str) -> Response:
+        """Download an attachment from a message. Returns the `requests.Response` object so it can be processed further."""
+        log(f"Attachment download requested: {message_id}/{attachment_id}")
+        return self.connection_manager.get(
+            join_path(self.endpoint, message_id, "attachment", attachment_id),
+            token=self.token,
         )

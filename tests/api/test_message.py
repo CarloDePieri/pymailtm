@@ -162,3 +162,24 @@ class TestAMessageController:
         )
         self.get_controller(mocks.token).mark_message_as_seen(mocks.message_intro.id)
         assert mock_api.called
+
+    def test_should_offer_a_way_to_download_attachments(
+        self, mock_api, mocks, auth_response_callback
+    ):
+        """A message controller should offer a way to download attachments."""
+
+        def callback(_, context):
+            context.headers["Content-Type"] = "image/svg+xml"
+            context.content = mocks.test_svg
+            return mocks.test_svg.decode()
+
+        endpoint = f"{BASE_URL}/messages/{mocks.message_intro.id}/attachment/{mocks.attachment_id}"
+        mock_api.get(
+            endpoint,
+            text=auth_response_callback(mocks.token, callback, status_code=200),
+        )
+
+        response = self.get_controller(mocks.token).download_attachment(
+            mocks.message_intro.id, mocks.attachment_id
+        )
+        assert response.content == mocks.test_svg
