@@ -60,9 +60,22 @@ class Account:
                 message_data["intro"],
                 text,
                 html,
+                message_data["seen"],
                 message_data))
 
         return messages
+
+    def mark_seen_message(self, message_id):
+        headers = self.auth_headers
+        headers["Content-Type"] = "application/ld+json";
+
+        r = requests.patch(
+                f"{self.api_address}/messages/{message_id}", headers=headers,
+                          data=json.dumps({'seen': True}))
+        if r.status_code not in [200, 201]:
+            print(r.text)
+            raise CouldNotGetUpdateMessageException(f"HTTP {r.status_code}")
+        return r.json()
 
     def delete_account(self):
         """Try to delete the account. Returns True if it succeeds."""
@@ -111,6 +124,7 @@ class Message:
     intro: str
     text: str
     html: str
+    seen: bool
     data: Dict
 
     def open_web(self):
@@ -151,6 +165,10 @@ def open_webbrowser(link: str) -> None:
 
 class CouldNotGetMessagesException(Exception):
     """Raised if a GET on /messages returns with a failed status code."""
+
+
+class CouldNotGetUpdateMessageException(Exception):
+    """Raised if a PATCH on /messages returns with a failed status code."""
 
 
 class CouldNotGetAccountException(Exception):
