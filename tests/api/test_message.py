@@ -22,6 +22,20 @@ class TestAMessageController:
             ConnectionManager(BASE_URL), token
         )
 
+    def test_should_have_iterators_that_handle_no_messages(
+        self, mocks, mock_api, auth_response_callback
+    ):
+        """A message controller should have iterators that handle no messages."""
+        mock_api.get(
+            f"{BASE_URL}/messages?page=1",
+            status_code=200,
+            json=auth_response_callback(
+                mocks.token, mocks.json_empty_message_intros, status_code=200
+            ),
+        )
+        assert list(self.get_controller(mocks.token).message_intros) == []
+        assert list(self.get_controller(mocks.token).messages) == []
+
     def test_should_be_able_to_download_a_message_intros_page(
         self, mock_api, mocks, auth_response_callback
     ):

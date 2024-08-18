@@ -78,20 +78,19 @@ class LinkedCollectionIterator(Generic[TC, T]):
         return self
 
     def __next__(self) -> T:
-        if not self.elements:
-            if self.current_url:
-                # Fetch the next page
-                response = self.connection_manager.get(
-                    self.current_url, token=self.token
-                )
-                # Create the collection and store the elements
-                collection = self.factory(**response.json())
-                self.elements = Deque[T](collection.hydra_member)
+        if not self.elements and self.current_url:
+            # Fetch the next page
+            response = self.connection_manager.get(self.current_url, token=self.token)
+            # Create the collection and store the elements
+            collection = self.factory(**response.json())
+            self.elements = Deque[T](collection.hydra_member)
 
-                # Update the current_url for the next iteration
-                self.current_url = None
-                if collection.hydra_view and collection.hydra_view.hydra_next:
-                    self.current_url = f"{collection.hydra_view.hydra_next}"
-            else:
-                raise StopIteration
+            # Update the current_url for the next iteration
+            self.current_url = None
+            if collection.hydra_view and collection.hydra_view.hydra_next:
+                self.current_url = f"{collection.hydra_view.hydra_next}"
+
+        if not self.elements:
+            raise StopIteration
+
         return self.elements.popleft()

@@ -95,6 +95,12 @@ class MocksData:
         "updatedAt": "2024-08-12T09:10:20+00:00",
         "accountId": f"/accounts/{account_id}",
     }
+    json_empty_message_intros = {
+        "@id": "/messages",
+        "@type": "hydra:Collection",
+        "hydra:totalItems": 0,
+        "hydra:member": [],
+    }
     json_message_intros = {
         "@id": "/messages",
         "@type": "hydra:Collection",
