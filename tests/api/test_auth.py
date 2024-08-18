@@ -14,7 +14,7 @@ class TestAnAuthController:
     @pytest.fixture(scope="class", autouse=True)
     def setup(self, request):
         """TestAnAccountController setup"""
-        request.cls.ac = AuthController(ConnectionManager(BASE_URL))
+        request.cls.ac = AuthController(ConnectionManager())
 
     def test_should_be_able_to_authenticate(self, mock_api, mocks):
         """An auth controller should be able to authenticate."""

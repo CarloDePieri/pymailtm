@@ -17,7 +17,7 @@ class TestASourceController:
                 mocks.token, mocks.json_message_source, status_code=200
             ),
         )
-        connection_manager = ConnectionManager(BASE_URL)
+        connection_manager = ConnectionManager()
         source = SourceController(connection_manager, mocks.token).get_source(
             mocks.message_intro.id
         )

@@ -48,14 +48,13 @@ def raise_for_status(response: Response):
 
 class ConnectionManager:
     """Class used to manage and abstract the connection to the API."""
+    base_url: str = "https://api.mail.tm"
 
     def __init__(
         self,
-        base_url: str,
         handle_rate_limit: bool = True,
         rate_limit_delay: float = 1,
     ):
-        self.base_url = base_url
         self.handle_rate_limit = handle_rate_limit
         self.rate_limit_delay = rate_limit_delay
         self.headers = {

@@ -19,7 +19,7 @@ class TestAMessageController:
     def setup(self, request):
         """TestAMessageController setup"""
         request.cls.get_controller = lambda _, token: MessageController(
-            ConnectionManager(BASE_URL), token
+            ConnectionManager(), token
         )
 
     def test_should_have_iterators_that_handle_no_messages(

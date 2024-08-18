@@ -15,7 +15,7 @@ class TestAnAccountController:
     @pytest.fixture(scope="class", autouse=True)
     def setup(self, request):
         """TestAnAccountController setup"""
-        request.cls.ac = AccountController(ConnectionManager(BASE_URL))
+        request.cls.ac = AccountController(ConnectionManager())
 
     def test_should_be_able_to_create_a_new_account(self, mock_api, mocks):
         """An account controller should be able to create a new account."""

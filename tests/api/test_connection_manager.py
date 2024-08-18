@@ -18,7 +18,7 @@ class TestAConnectionManager:
     @pytest.fixture(scope="class", autouse=True)
     def setup(self, request):
         """TestAConnectionManager setup"""
-        request.cls.cm = ConnectionManager(BASE_URL)
+        request.cls.cm = ConnectionManager()
 
     def test_should_raise_for_http_errors(self, mock_api):
         """A connection manager should raise for http errors."""
@@ -71,7 +71,7 @@ class TestAConnectionManager:
 
     def test_should_allow_to_ignore_the_rate_limiter(self, mock_api):
         """A connection manager should allow to ignore the rate limiter."""
-        cm = ConnectionManager(BASE_URL, handle_rate_limit=False)
+        cm = ConnectionManager(handle_rate_limit=False)
         # set up the api mock
         mock_api.get(f"{BASE_URL}/domains", status_code=429)
         # request the endpoint

@@ -14,7 +14,7 @@ class TestADomainController:
     @pytest.fixture(scope="class", autouse=True)
     def setup(self, request):
         """TestADomainController setup"""
-        connection_manager = ConnectionManager(BASE_URL)
+        connection_manager = ConnectionManager()
         request.cls.domain_controller = DomainController(connection_manager)
 
     def test_should_be_able_to_recover_available_domains(self, mock_api, mocks):
