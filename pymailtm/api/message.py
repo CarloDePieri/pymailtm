@@ -1,8 +1,8 @@
-from typing import List, Optional, Iterator
+from typing import List, Iterator
 
 from pydantic import BaseModel, Field
 
-from api.utils import join_path
+from pymailtm.api.utils import join_path
 from pymailtm.api.connection_manager import ConnectionManager
 from pymailtm.api.auth import Token
 from pymailtm.api.linked_collection import LinkedCollection, LinkedCollectionIterator
