@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 from pymailtm.api.logger import log
 from pymailtm.api.utils import join_path, add_query
-from pymailtm.api.connection_manager import ConnectionManager
+from pymailtm.api.connection_manager import ConnectionManagerWithRateLimiter
 from pymailtm.api.linked_collection import (
     LinkedCollection,
     LinkedCollectionIterator,
@@ -31,7 +31,7 @@ class DomainController:
 
     endpoint = "domains"
 
-    def __init__(self, connection_manager: ConnectionManager):
+    def __init__(self, connection_manager: ConnectionManagerWithRateLimiter):
         self.connection_manager = connection_manager
 
     @property

@@ -1,4 +1,4 @@
-from pymailtm.api.connection_manager import ConnectionManager
+from pymailtm.api.connection_manager import ConnectionManagerWithRateLimiter
 from pymailtm.api.source import SourceController
 from conftest import BASE_URL
 
@@ -17,7 +17,7 @@ class TestASourceController:
                 mocks.token, mocks.json_message_source, status_code=200
             ),
         )
-        connection_manager = ConnectionManager()
+        connection_manager = ConnectionManagerWithRateLimiter()
         source = SourceController(connection_manager, mocks.token).get_source(
             mocks.message_intro.id
         )

@@ -4,7 +4,7 @@ from conftest import BASE_URL
 
 from pymailtm.api.account import AccountController
 from pymailtm.api.credentials import Credentials
-from pymailtm.api.connection_manager import ConnectionManager
+from pymailtm.api.connection_manager import ConnectionManagerWithRateLimiter
 
 
 class TestAnAccountController:
@@ -15,7 +15,7 @@ class TestAnAccountController:
     @pytest.fixture(scope="class", autouse=True)
     def setup(self, request):
         """TestAnAccountController setup"""
-        request.cls.ac = AccountController(ConnectionManager())
+        request.cls.ac = AccountController(ConnectionManagerWithRateLimiter())
 
     def test_should_be_able_to_create_a_new_account(self, mock_api, mocks):
         """An account controller should be able to create a new account."""

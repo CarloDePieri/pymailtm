@@ -8,7 +8,7 @@ from requests import Response
 from sseclient import Event
 
 from pymailtm.api.utils import join_path
-from pymailtm.api.connection_manager import ConnectionManager
+from pymailtm.api.connection_manager import ConnectionManagerWithRateLimiter
 from pymailtm.api.auth import Token
 from pymailtm.api.linked_collection import LinkedCollection, LinkedCollectionIterator
 from pymailtm.api.logger import log
@@ -80,7 +80,10 @@ class MessageIntros(LinkedCollection[MessageIntro]):
 class MessageControllerIterators:
 
     def __init__(
-        self, endpoint: str, connection_manager: ConnectionManager, token: Token
+        self,
+        endpoint: str,
+        connection_manager: ConnectionManagerWithRateLimiter,
+        token: Token,
     ):
         self.endpoint = endpoint
         self.connection_manager = connection_manager
@@ -92,7 +95,9 @@ class MessageController:
 
     endpoint = "messages"
 
-    def __init__(self, connection_manager: ConnectionManager, token: Token):
+    def __init__(
+        self, connection_manager: ConnectionManagerWithRateLimiter, token: Token
+    ):
         self.connection_manager = connection_manager
         self.token = token
 

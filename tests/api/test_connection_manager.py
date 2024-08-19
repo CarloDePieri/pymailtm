@@ -5,7 +5,10 @@ from typing import Generator
 import pytest
 from requests import HTTPError
 
-from pymailtm.api.connection_manager import ConnectionManager
+from pymailtm.api.connection_manager import (
+    ConnectionManagerWithRateLimiter,
+    ConnectionManager,
+)
 
 BASE_URL = "https://api.mail.tm"
 
@@ -28,8 +31,21 @@ class TestAConnectionManager:
         with pytest.raises(HTTPError):
             self.cm.get("/domains")
 
+    def test_should_fail_when_hitting_the_rate_limiter(self, mock_api):
+        """A connection manager should fail when hitting the rate limiter."""
+        # set up the api mock
+        mock_api.get(f"{BASE_URL}/domains", status_code=429)
+        # request the endpoint
+        with pytest.raises(HTTPError):
+            self.cm.get("/domains")
+
+
+class TestACollectionManagerWithRateLimiter:
+    """Test: A Collection Manager with rate limiter..."""
+
     def test_should_handle_rate_limit(self, mock_api, mocks):
         """A connection manager should handle rate limit."""
+        cm = ConnectionManagerWithRateLimiter()
 
         # rate_limiter will always yield true the first time
         # and then check if the elapsed time is less than 1 second (and FAIL THE TEST if it is)
@@ -42,7 +58,7 @@ class TestAConnectionManager:
                 else:
                     elapsed_time = time.time() - last_request_time
                     last_request_time = time.time()
-                    if elapsed_time < self.cm.rate_limit_delay:
+                    if elapsed_time < cm.rate_limit_delay:
                         # Another request was made too soon, fail this test
                         raise pytest.fail(
                             "Rate limit not handled by the ConnectionManager"
@@ -66,14 +82,5 @@ class TestAConnectionManager:
             text=simulate_rate_limit,
         )
         # request the endpoint
-        response = self.cm.get("/domains")
+        response = cm.get("/domains")
         assert response.json() == mocks.json_domains
-
-    def test_should_allow_to_ignore_the_rate_limiter(self, mock_api):
-        """A connection manager should allow to ignore the rate limiter."""
-        cm = ConnectionManager(handle_rate_limit=False)
-        # set up the api mock
-        mock_api.get(f"{BASE_URL}/domains", status_code=429)
-        # request the endpoint
-        with pytest.raises(HTTPError):
-            cm.get("/domains")

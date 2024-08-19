@@ -5,7 +5,7 @@ from typing import TypeVar, Generic, List, Callable, Deque, TYPE_CHECKING
 if TYPE_CHECKING:
     from pymailtm.api.auth import Token
 from pymailtm.api.utils import add_query
-from pymailtm.api.connection_manager import ConnectionManager
+from pymailtm.api.connection_manager import ConnectionManagerWithRateLimiter
 
 
 class Mapping(BaseModel):
@@ -53,7 +53,7 @@ class LinkedCollectionIterator(Generic[TC, T]):
 
     def __init__(
         self,
-        connection_manager: ConnectionManager,
+        connection_manager: ConnectionManagerWithRateLimiter,
         endpoint: str,
         collection_factory: Callable[..., TC],
         token: Token = None,
@@ -62,7 +62,7 @@ class LinkedCollectionIterator(Generic[TC, T]):
         Initialize the iterator.
 
         Args:
-            connection_manager (ConnectionManager): The connection manager to use.
+            connection_manager (ConnectionManagerWithRateLimiter): The connection manager to use.
             endpoint (str): The endpoint to call.
             collection_factory (Callable[..., TC]): A callable that returns a LinkedCollection.
             token (Optional[Token]): The token to use for authentication.

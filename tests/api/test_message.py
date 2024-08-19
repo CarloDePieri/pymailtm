@@ -5,7 +5,7 @@ import pytest
 from requests import Request
 
 from pymailtm.api.auth import Token
-from pymailtm.api.connection_manager import ConnectionManager
+from pymailtm.api.connection_manager import ConnectionManagerWithRateLimiter
 from pymailtm.api.message import MessageController
 from conftest import BASE_URL, auth_response_callback
 
@@ -19,7 +19,7 @@ class TestAMessageController:
     def setup(self, request):
         """TestAMessageController setup"""
         request.cls.get_controller = lambda _, token: MessageController(
-            ConnectionManager(), token
+            ConnectionManagerWithRateLimiter(), token
         )
 
     def test_should_have_iterators_that_handle_no_messages(

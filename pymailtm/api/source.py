@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from pymailtm.api.connection_manager import ConnectionManager
+from pymailtm.api.connection_manager import ConnectionManagerWithRateLimiter
 from pymailtm.api.logger import log
 from pymailtm.api.auth import Token
 from pymailtm.api.utils import join_path
@@ -18,7 +18,9 @@ class SourceController:
 
     endpoint = "sources"
 
-    def __init__(self, connection_manager: ConnectionManager, token: Token):
+    def __init__(
+        self, connection_manager: ConnectionManagerWithRateLimiter, token: Token
+    ):
         self.connection_manager = connection_manager
         self.token = token
 

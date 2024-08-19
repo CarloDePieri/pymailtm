@@ -2,7 +2,7 @@ import pytest
 from requests import HTTPError
 
 from conftest import BASE_URL
-from pymailtm.api.connection_manager import ConnectionManager
+from pymailtm.api.connection_manager import ConnectionManagerWithRateLimiter
 from pymailtm.api.domain import DomainController
 
 
@@ -14,7 +14,7 @@ class TestADomainController:
     @pytest.fixture(scope="class", autouse=True)
     def setup(self, request):
         """TestADomainController setup"""
-        connection_manager = ConnectionManager()
+        connection_manager = ConnectionManagerWithRateLimiter()
         request.cls.domain_controller = DomainController(connection_manager)
 
     def test_should_be_able_to_recover_available_domains(self, mock_api, mocks):

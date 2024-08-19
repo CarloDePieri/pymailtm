@@ -4,7 +4,7 @@ from pymailtm.api.logger import log
 from pymailtm.api.auth import Token
 from pymailtm.api.utils import join_path
 from pymailtm.api.credentials import Credentials
-from pymailtm.api.connection_manager import ConnectionManager
+from pymailtm.api.connection_manager import ConnectionManagerWithRateLimiter
 
 
 class Account(BaseModel):
@@ -26,7 +26,7 @@ class AccountController:
     endpoint = "accounts"
     endpoint_me = "me"
 
-    def __init__(self, connection_manager: ConnectionManager):
+    def __init__(self, connection_manager: ConnectionManagerWithRateLimiter):
         self.connection_manager = connection_manager
 
     def create_account(self, credentials: Credentials) -> Account:
