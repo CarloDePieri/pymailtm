@@ -1,3 +1,4 @@
+import json
 from dataclasses import dataclass
 
 from pymailtm.api.message import Attachment, MessageIntro, Message
@@ -197,6 +198,15 @@ class MocksData:
         "data": message_resource,
     }
     test_svg = b'<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n<!-- Created with Inkscape (http://www.inkscape.org/) -->\n\n<svg\n   width="48"\n   height="48"\n   viewBox="0 0 48 48"\n   version="1.1"\n   id="svg1"\n   xmlns="http://www.w3.org/2000/svg"\n   xmlns:svg="http://www.w3.org/2000/svg">\n  <defs\n     id="defs1" />\n  <g\n     id="layer1">\n    <rect\n       style="fill:#ff754e;fill-opacity:1;stroke-width:3.26929;stroke-opacity:0.26"\n       id="rect1"\n       width="48"\n       height="48"\n       x="0"\n       y="0" />\n    <text\n       xml:space="preserve"\n       style="font-style:normal;font-weight:normal;font-size:13.3333px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"\n       x="12.273367"\n       y="28.326656"\n       id="text1"><tspan\n         id="tspan1"\n         x="12.273367"\n         y="28.326656"\n         style="font-size:13.3333px">test</tspan></text>\n  </g>\n</svg>\n'
+    mercure_stream = [
+        "id: urn:uuid:bc1b231b-f9ab-4a79-8230-0ffd33995b09",
+        "data:" + json.dumps(json_message_intro),
+        "\nid: urn:uuid:07b417c1-ab0c-4c97-b4a2-2676e937c3eb",
+        "data:" + json.dumps(json_message_intro),
+        "\nid: urn:uuid:6baa3b5e-11dc-46c1-800e-882849d56232",
+        "data:" + json.dumps(json_message_intro),
+    ]
+    mercure_stream_messages = "\n".join(mercure_stream)
 
     def __init__(self):
         self.domain = Domain(**self.json_domain)

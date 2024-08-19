@@ -47,6 +47,7 @@ requests = "^2.32.3"
 random-username = "^1.0.2"
 pyperclip = "^1.9.0"
 pydantic = "^2.8.2"
+sseclient-py = "^1.8.0"
 
 [tool.poetry.dev-dependencies]
 anyio = "^4.4.0"

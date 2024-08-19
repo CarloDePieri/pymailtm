@@ -4,7 +4,10 @@ from urllib.parse import urljoin
 from time import sleep
 import json
 
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Dict, Optional, Generator
+
+# noinspection PyProtectedMember,PyPackageRequirements
+from sseclient import Event, SSEClient
 
 if TYPE_CHECKING:
     from pymailtm.api.auth import Token
@@ -48,7 +51,9 @@ def raise_for_status(response: Response):
 
 class ConnectionManager:
     """Class used to manage and abstract the connection to the API."""
+
     base_url: str = "https://api.mail.tm"
+    mercure_url: str = "https://mercure.mail.tm/.well-known/mercure"
 
     def __init__(
         self,
@@ -105,6 +110,21 @@ class ConnectionManager:
         raise_for_status(response)
         self._log("PATCH", endpoint, response)
         return response
+
+    def subscribe_for_sse_events(
+        self, account_id: str, token: Token
+    ) -> Generator[Event, None, None]:
+        """Wait for a Mercure update on the '/accounts/{account_id}' topic."""
+        params = {"topic": "/accounts/" + account_id}
+        headers = self._get_authenticated_headers(token)
+        response = get(self.mercure_url, stream=True, params=params, headers=headers)
+        raise_for_status(response)
+        log(
+            f"HTTP STREAM GET with mercure prepared, account id {account_id} -> {response.status_code}"
+        )
+        # noinspection PyTypeChecker
+        # requests.get with stream=True returns a Response that can be used as Generator, the type checker is wrong here
+        return SSEClient(event_source=response).events()
 
     @staticmethod
     def _log(method: str, endpoint: str, response: Response) -> None:

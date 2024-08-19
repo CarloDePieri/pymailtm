@@ -1,7 +1,11 @@
-from typing import List, Iterator, Union, Literal
+import json
+from typing import List, Iterator, Union, Literal, Generator
 
 from pydantic import BaseModel, Field
 from requests import Response
+
+# noinspection PyProtectedMember,PyPackageRequirements
+from sseclient import Event
 
 from pymailtm.api.utils import join_path
 from pymailtm.api.connection_manager import ConnectionManager
@@ -164,4 +168,30 @@ class MessageController:
         return self.connection_manager.get(
             join_path(self.endpoint, message_id, "attachment", attachment_id),
             token=self.token,
+        )
+
+    def wait_for_messages(self, account_id: str) -> Generator[MessageIntro, None, None]:
+        """Wait for new messages to arrive and yield them as they arrive. This is an infinite generator, so the caller
+        should take care of breaking the loop when needed."""
+        log(f"Waiting for messages for account: {account_id}")
+        return self._wait_for_messages(account_id)
+
+    def wait_for_the_next_message(self, account_id: str) -> MessageIntro:
+        """Wait for the next message to arrive and return it."""
+        log(f"Waiting for the next message for account: {account_id}")
+        for message in self._wait_for_messages(account_id):
+            return message
+
+    def _wait_for_messages(
+        self, account_id: str
+    ) -> Generator[MessageIntro, None, None]:
+        def generate_message_intro_from_event(
+            events: Generator[Event, None, None]
+        ) -> Generator[MessageIntro, None, None]:
+            for event in events:
+                log(f"New event received ({event.event}): {event.data}")
+                yield MessageIntro(**json.loads(event.data))
+
+        return generate_message_intro_from_event(
+            self.connection_manager.subscribe_for_sse_events(account_id, self.token)
         )

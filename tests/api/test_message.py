@@ -197,3 +197,40 @@ class TestAMessageController:
             mocks.message_intro.id, mocks.attachment_id
         )
         assert response.content == mocks.test_svg
+
+    def test_should_have_a_method_that_waits_for_new_messages(
+        self, mocks, mock_api, auth_response_callback
+    ):
+        """A message controller should have a method that waits for new messages."""
+        mock_api.get(
+            f"https://mercure.mail.tm/.well-known/mercure?topic=/accounts/{mocks.account_id}",
+            text=auth_response_callback(
+                mocks.token, mocks.mercure_stream_messages, status_code=200
+            ),
+        )
+
+        messages = self.get_controller(mocks.token).wait_for_messages(mocks.account_id)
+        assert mock_api.last_request.stream is True
+        count = 0
+        for message in messages:
+            assert message == mocks.message_intro
+            count += 1
+            if count == 3:
+                break
+        assert count == 3
+
+    def test_should_have_a_method_that_waits_for_the_next_message(
+        self, mocks, mock_api, auth_response_callback
+    ):
+        """A message controller should have a method that waits for the next message."""
+        mock_api.get(
+            f"https://mercure.mail.tm/.well-known/mercure?topic=/accounts/{mocks.account_id}",
+            text=auth_response_callback(
+                mocks.token, mocks.mercure_stream_messages, status_code=200
+            ),
+        )
+        message = self.get_controller(mocks.token).wait_for_the_next_message(
+            mocks.account_id
+        )
+        assert mock_api.last_request.stream is True
+        assert message == mocks.message_intro
