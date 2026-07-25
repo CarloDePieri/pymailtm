@@ -197,7 +197,7 @@ class MailTm:
 
     def get_account(self, password=None):
         """Create and return a new account."""
-        username = (generate_username(1)[0]).lower()
+        username = (generate_username(1)[0]).lower() + f"{random.randbytes(4).hex()}"
         domain = random.choice(self._get_domains_list())
         address = "{}@{}".format(username, domain)
         if not password:
